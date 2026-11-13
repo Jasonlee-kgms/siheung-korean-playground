@@ -135,9 +135,8 @@ const state = {
   savingScore: false,
   
   // Gemini API
-  geminiApiKey: localStorage.getItem('gemini_api_key') || '',
   forceLocal: localStorage.getItem('force_local') === 'true',
-  isGeminiActive: false,
+  geminiConfigured: null,
 
   // 고품질 보이스 엔진
   availableVoices: [],
@@ -246,7 +245,6 @@ const dom = {
   
   // 모달들
   configModal: document.getElementById('config-modal'),
-  geminiApiKeyInput: document.getElementById('gemini-api-key-input'),
   toggleForceLocal: document.getElementById('toggle-force-local'),
   voiceSelectDropdown: document.getElementById('voice-select-dropdown'),
   btnTestVoice: document.getElementById('btn-test-voice'),
@@ -410,107 +408,56 @@ function showView(viewElement) {
 // [7] Gemini API
 // ==========================================
 function updateEngineStatus() {
-  if (state.forceLocal || !state.geminiApiKey) {
-    state.isGeminiActive = false;
-    dom.aiEngineStatus.textContent = "현재 오프라인 모드";
-  } else {
-    state.isGeminiActive = true;
-    dom.aiEngineStatus.textContent = "현재 Gemini 사용 모드";
-  }
+  const message = state.forceLocal ? '현재 오프라인 모드'
+    : state.geminiConfigured === true ? '서버 Gemini 사용 가능'
+    : state.geminiConfigured === false ? '서버 Gemini 키 설정 필요'
+    : '서버 Gemini 설정 확인 중';
+  dom.aiEngineStatus.textContent = message;
 }
 
-const geminiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const geminiEndpoint = '/api/gemini';
 const ageErrorMessages = {
-  missing_key: '사진을 찍었어요. 운영 설정에서 Gemini API 키를 저장하면 나이를 추정할 수 있어요.',
+  missing_key: '사진을 찍었어요. Netlify에 GEMINI_API_KEY를 설정하고 재배포하면 나이를 추정할 수 있어요.',
   offline: '사진을 찍었어요. 운영 설정에서 오프라인 모드를 끄면 나이를 추정할 수 있어요.',
-  key_rejected: '사진을 찍었어요. Gemini API 키 또는 프로젝트 권한을 운영 설정에서 확인해 주세요.',
+  key_rejected: '사진을 찍었어요. Netlify에 저장한 Gemini API 키와 프로젝트 권한을 확인해 주세요.',
   rate_limit: '사진을 찍었어요. Gemini 사용량 한도에 도달했어요. 잠시 후 다시 시도해 주세요.',
   timeout: '사진을 찍었어요. Gemini 응답이 늦어지고 있어요. 다시 시도하거나 난이도를 직접 골라 주세요.',
   no_face: '사진에서 얼굴을 뚜렷하게 확인하기 어려워요. 얼굴을 화면 가운데에 두고 다시 찍어 주세요.',
+  invalid_image: '사진을 분석용으로 읽을 수 없어요. 다시 찍어 주세요.',
   bad_response: '사진을 찍었어요. Gemini가 나이 추정 결과를 돌려주지 않았어요. 다시 시도하거나 난이도를 직접 골라 주세요.',
-  connection: '사진을 찍었어요. Gemini에 연결할 수 없어요. 인터넷 연결을 확인해 주세요.'
+  connection: '사진을 찍었어요. 나이 예측 서버에 연결할 수 없어요. 다시 시도하거나 난이도를 직접 골라 주세요.'
 };
 
-async function analyzeAgeWithGemini(base64Image, signal) {
-  if (state.forceLocal) return { error: 'offline' };
-  if (!state.geminiApiKey) return { error: 'missing_key' };
-  const prompt = '얼굴이 한 명이고 뚜렷하면 사진 속 대략적인 나이를 정수 age로 답하세요. 얼굴이 없거나 가려졌거나 여러 명이면 age를 0으로 답하세요.';
-
-  const timeout = AbortSignal.timeout(18000);
+async function checkGeminiStatus() {
   try {
-    const response = await fetch(geminiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': state.geminiApiKey },
-      signal: AbortSignal.any([signal, timeout]),
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
-          ]
-        }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: { type: 'OBJECT', required: ['age'], properties: { age: { type: 'INTEGER' } } },
-          thinkingConfig: { thinkingBudget: 0 }
-        }
-      })
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      if (response.status === 429) return { error: 'rate_limit' };
-      if ([401, 403].includes(response.status) || data?.error?.details?.some(detail => detail.reason === 'API_KEY_INVALID')) {
-        return { error: 'key_rejected' };
-      }
-      return { error: 'bad_response' };
-    }
-    const rawText = data?.candidates?.[0]?.content?.parts?.filter(part => !part.thought).map(part => part.text || '').join('');
-    let age;
-    try { age = JSON.parse(rawText)?.age; } catch { return { error: 'bad_response' }; }
-    if (age === 0) return { error: 'no_face' };
-    if (!Number.isInteger(age) || age < 1 || age > 120) return { error: 'bad_response' };
-    return { age, mode: age < 13 ? 'elem' : 'middle' };
+    const response = await fetch(geminiEndpoint, { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+    const data = await response.json();
+    state.geminiConfigured = response.ok && typeof data.configured === 'boolean' ? data.configured : null;
   } catch {
-    return { error: timeout.aborted ? 'timeout' : 'connection' };
+    state.geminiConfigured = null;
+  }
+  updateEngineStatus();
+  if (state.geminiConfigured === null && !state.forceLocal) {
+    dom.aiEngineStatus.textContent = '서버 Gemini 설정을 확인할 수 없어요.';
   }
 }
 
-async function getGeminiWordReply(playerWord, lastChar) {
-  if (!state.isGeminiActive) return null;
-  const prompt = `당신은 2026 시흥 AI 페스타 부스의 '뽀랭이'입니다.
-한국어 끝말잇기 게임을 진행 중입니다.
-- 플레이어 단어: '${playerWord}'
-- 이어받을 끝 글자: '${lastChar}' (두음법칙 변환 인정)
-- 플레이어 모드: '${state.mode === 'elem' ? '초등학생' : '중학생'}'
-규칙:
-1. 반드시 '${lastChar}'(또는 두음법칙)로 시작하는 한국어 표준 명사 1개 제시.
-2. 륨, 튬, 듐, 늼, 쁨 같은 한방 단어 절대 금지.
-3. 재치 있는 1문장 대사.
-JSON:
-{
-  "word": "단어",
-  "reaction": "'${playerWord}'이라니 제법이구나! 내 차례는 '단어'다!",
-  "mood": "idle" | "nervous" | "amazed"
-}`;
-
+async function requestGemini(input, timeoutMs, signal) {
+  if (state.forceLocal) return { error: 'offline' };
+  const timeout = AbortSignal.timeout(timeoutMs);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
     const response = await fetch(geminiEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': state.geminiApiKey },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { response_mime_type: "application/json" }
-      })
+      headers: { 'Content-Type': 'application/json' },
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      body: JSON.stringify(input)
     });
-    clearTimeout(timeout);
-    const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return JSON.parse(rawText);
-  } catch (e) {
-    return null;
+    const data = await response.json().catch(() => null);
+    if (response.status === 429) return { error: 'rate_limit' };
+    if (response.ok && data) return data;
+    return { error: data?.error || 'connection' };
+  } catch {
+    return { error: timeout.aborted ? 'timeout' : 'connection' };
   }
 }
 
@@ -581,8 +528,9 @@ function captureWebcamFrame() {
   const video = dom.videoFeed;
   const canvas = dom.canvasFeed;
   if (!video.videoWidth || video.readyState < 2) return null;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  const scale = Math.min(1, 640 / Math.max(video.videoWidth, video.videoHeight));
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   canvas.hidden = false;
@@ -800,15 +748,16 @@ function setupSpeechRecognition() {
 // ==========================================
 function initApp() {
   rankings.startRetry();
+  localStorage.removeItem('gemini_api_key');
   document.getElementById('btn-replay-dance').addEventListener('click', playVictoryDance);
   updateEngineStatus();
   setCharacterMood('idle');
 
   // 설정
   dom.btnConfig.addEventListener('click', () => {
-    dom.geminiApiKeyInput.value = state.geminiApiKey;
     dom.toggleForceLocal.checked = state.forceLocal;
     populateVoiceList();
+    if (!state.forceLocal) checkGeminiStatus();
     dom.configModal.showModal();
   });
   dom.btnCloseConfig.addEventListener('click', () => dom.configModal.close());
@@ -820,10 +769,8 @@ function initApp() {
   });
 
   dom.btnSaveConfig.addEventListener('click', () => {
-    state.geminiApiKey = dom.geminiApiKeyInput.value.trim();
     state.forceLocal = dom.toggleForceLocal.checked;
     state.selectedVoiceURI = dom.voiceSelectDropdown.value;
-    localStorage.setItem('gemini_api_key', state.geminiApiKey);
     localStorage.setItem('force_local', state.forceLocal);
     localStorage.setItem('selected_voice_uri', state.selectedVoiceURI);
     updateEngineStatus();
@@ -848,9 +795,9 @@ function initApp() {
   document.getElementById('btn-start-camera-scan').addEventListener('click', () => {
     sfx.init();
     dom.stageBadge.textContent = "1 / 3 · AI 나이 예측";
-    document.getElementById('scan-instruction').textContent = state.isGeminiActive
-      ? "사진을 찍으면 Gemini로 보내요. AI가 나이를 추정해 초등·중등 난이도를 추천해요."
-      : "지금은 오프라인 모드예요. 사진 없이 건너뛰고 원하는 난이도를 고를 수 있어요.";
+    document.getElementById('scan-instruction').textContent = state.forceLocal
+      ? "지금은 오프라인 모드예요. 사진 없이 건너뛰고 원하는 난이도를 고를 수 있어요."
+      : "사진을 찍으면 Gemini로 보내요. AI가 나이를 추정해 초등·중등 난이도를 추천해요.";
     dom.btnCaptureScan.textContent = "사진 찍기";
     dom.scanLaser.classList.remove('scanning');
     dom.scanResultCard.classList.remove('active');
@@ -872,12 +819,14 @@ function initApp() {
     dom.scanLaser.classList.add('scanning');
     dom.btnCaptureScan.disabled = true;
     dom.btnCaptureScan.textContent = '나이 추정 중…';
-    dom.scanNotice.textContent = state.isGeminiActive ? '사진을 찍었어요. AI가 나이를 추정하고 있어요.' : '';
+    dom.scanNotice.textContent = state.forceLocal ? '' : '사진을 찍었어요. AI가 나이를 추정하고 있어요.';
     const request = new AbortController();
     state.ageRequest = request;
-    const result = await analyzeAgeWithGemini(base64Img, request.signal);
+    const result = await requestGemini({ action: 'age', image: base64Img }, 20000, request.signal);
     if (attempt !== state.cameraAttempt) return;
 
+    if (result.error === 'missing_key') state.geminiConfigured = false;
+    if (result.age) state.geminiConfigured = true;
     state.ageRequest = null;
     dom.scanLaser.classList.remove('scanning');
     dom.btnCaptureScan.disabled = false;
@@ -885,7 +834,7 @@ function initApp() {
 
     state.mode = result?.mode ?? 'elem';
     const modeLabel = state.mode === 'elem' ? '초등' : '중등';
-    dom.scanNotice.textContent = ageErrorMessages[result.error] || '나이 추정을 마쳤어요.';
+    dom.scanNotice.textContent = result.age ? '나이 추정을 마쳤어요.' : ageErrorMessages[result.error] || ageErrorMessages.bad_response;
     dom.scanAgeTitle.textContent = result.age ? `Gemini 추천 · ${modeLabel}` : `선택한 난이도 · ${modeLabel}`;
     dom.scanGreetingText.textContent = result.age
       ? `AI가 추정한 나이 · 약 ${result.age}세. 원하는 난이도로 바꿀 수 있어.`
@@ -1295,7 +1244,8 @@ async function executeAITurn(playerLastChar, playerWord) {
 
   state.battleTurn++;
 
-  let replyObj = await getGeminiWordReply(playerWord, playerLastChar);
+  const replyObj = state.geminiConfigured === false ? null
+    : await requestGemini({ action: 'word', word: playerWord, mode: state.mode }, 3800);
   if (attempt !== state.gameAttempt) return;
   const variants = getInitialVariants(playerLastChar);
   const canReply = word => typeof word === 'string' && word.length >= 2
