@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A0 포스터 | 국어 놀이터</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    @page { size: 841mm 1189mm; margin: 0; }
+    .print-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; }
+    .print-controls strong { margin-right: auto; }
+    .poster-wrapper { width: min(100% - 32px, 850px); margin: 0 auto 30px; container-type: inline-size; }
+    .poster { width: 100%; aspect-ratio: 841 / 1189; display: grid; grid-template-rows: auto 28cqw auto auto minmax(min-content, 1fr) auto; gap: 2.3cqw; padding: 5.4cqw; background: var(--paper); color: var(--ink); outline: 1px solid var(--line); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .poster-header { display: flex; justify-content: space-between; align-items: center; gap: 2cqw; border-bottom: .15cqw solid var(--ink); padding-bottom: 1.7cqw; font-weight: 800; font-size: 2.15cqw; }
+    .poster-zone { padding: .7cqw 1.3cqw; border: .15cqw solid currentColor; border-radius: .65cqw; color: var(--blue); white-space: nowrap; }
+    .poster-hero { display: grid; grid-template-columns: 1.9fr 1fr; align-items: center; gap: 2.4cqw; margin: 0 -1.2cqw; padding: 2.5cqw 3.6cqw; background: var(--blue-light); border: .2cqw solid var(--ink); box-shadow: 0 .5cqw 0 var(--ink); border-radius: 1.25cqw; }
+    .poster-hero h1 { color: var(--ink); font-size: 10.8cqw; line-height: 1.06; letter-spacing: -.105em; font-weight: 900; white-space: nowrap; }
+    .poster-hero h1 span { color: var(--blue); white-space: nowrap; }
+    .poster-hero p { margin-top: 1.25cqw; font-size: 2.7cqw; font-weight: 800; line-height: 1.45; letter-spacing: -.045em; }
+    .poster-art { position: relative; width: 100%; height: 100%; display: grid; place-items: center; isolation: isolate; background-image: linear-gradient(#aab7f072 .12cqw, transparent .12cqw), linear-gradient(90deg, #aab7f072 .12cqw, transparent .12cqw); background-size: 2.7cqw 2.7cqw; }
+    .poster-art img { width: 23cqw; height: 23cqw; z-index: 1; }
+    .poster-art span { display: grid; place-items: center; position: absolute; top: 38%; left: 7%; width: 5.7cqw; aspect-ratio: 1; font-size: 3.35cqw; font-weight: 900; border: .2cqw solid var(--ink); border-radius: .44cqw; box-shadow: .36cqw .42cqw 0 var(--ink); transform: rotate(-12deg); z-index: 2; }
+    .poster-art span:last-of-type { top: 56%; left: auto; right: 7%; transform: rotate(10deg); }
+    .poster-stages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); list-style: none; padding: 0; gap: 1.2cqw; }
+    .poster-stages li { padding: 1.4cqw 1.6cqw; border-top: .35cqw solid var(--ink); background: var(--white); border-radius: 0 0 .85cqw .85cqw; }
+    .poster-stages .number { display: inline-grid; place-items: center; width: 3.4cqw; aspect-ratio: 1; border-radius: .58cqw; font-size: 2.2cqw; line-height: 1; font-weight: 900; vertical-align: middle; }
+    .poster-stages h2 { font-size: 2.55cqw; line-height: 1.24; letter-spacing: -.075em; }
+    .poster-stages p { margin-top: .75cqw; font-size: 1.94cqw; color: var(--muted); line-height: 1.38; word-break: keep-all; }
+    .section-heading { font-size: 4.45cqw; line-height: 1.1; letter-spacing: -.085em; }
+    .development { padding-top: 1.25cqw; border-top: .18cqw solid var(--ink); }
+    .development > p { font-size: 2.05cqw; line-height: 1.4; margin: .8cqw 0 1.65cqw; color: var(--muted); word-break: keep-all; }
+    .development-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5cqw 1.65cqw; list-style: none; padding: 0; }
+    .development-grid li { position: relative; padding: 1.45cqw 1.7cqw 1.6cqw 2.35cqw; border: .13cqw solid var(--line); border-radius: .75cqw; background: var(--white); }
+    .development-grid li::before { content: ""; position: absolute; inset: 0 auto 0 0; width: .65cqw; border-radius: .7cqw 0 0 .7cqw; background: var(--yellow); }
+    .development-grid li:nth-child(2)::before { background: var(--pink); }
+    .development-grid li:nth-child(3)::before { background: var(--green); }
+    .development-grid li:nth-child(4)::before { background: #9baaf0; }
+    .development-grid h3 { font-size: 2.85cqw; line-height: 1.23; letter-spacing: -.075em; }
+    .development-grid h3 span { color: var(--blue); font-size: 2.03cqw; margin-right: .8cqw; letter-spacing: 0; }
+    .development-grid p { margin-top: .52cqw; font-size: 2.1cqw; color: var(--muted); line-height: 1.42; word-break: keep-all; }
+    .behind-scenes { align-self: stretch; padding: 1.95cqw 2.4cqw; border-radius: 1.2cqw; background: var(--blue); color: white; display: grid; align-content: center; gap: 1.1cqw; }
+    .behind-scenes h2 { font-size: 3.5cqw; line-height: 1.16; letter-spacing: -.075em; }
+    .word-flow { display: flex; align-items: center; flex-wrap: wrap; gap: .8cqw; font-size: 2.65cqw; font-weight: 900; }
+    .word-flow span { padding: .55cqw 1.2cqw; border-radius: .55cqw; color: var(--ink); }
+    .word-flow mark { background: none; color: var(--blue); text-decoration: underline; text-underline-offset: .12em; }
+    .behind-scenes p { font-size: 2cqw; line-height: 1.35; word-break: keep-all; }
+    .poster-details { display: grid; gap: .45cqw; font-size: 1.86cqw; font-weight: 700; line-height: 1.35; letter-spacing: -.025em; border-top: .14cqw solid var(--line); padding-top: 1.05cqw; }
+    .poster-details p:last-child { color: var(--muted); }
+    @media print {
+      body { width: 841mm; height: 1189mm; margin: 0; }
+      .print-controls { display: none; }
+      .poster-wrapper { width: 841mm; margin: 0; }
+      .poster { height: 1188.7mm; outline: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="print-controls" aria-label="포스터 도구">
+    <strong>A0 포스터 · 841 × 1189 mm</strong>
+    <a href="index.html" class="btn-secondary">게임 열기</a>
+    <button class="btn-primary-large" type="button" onclick="window.print()">인쇄 / PDF 저장</button>
+  </nav>
+  <div class="poster-wrapper">
+    <main class="poster">
+      <header class="poster-header"><span>2026 시흥 AI+X 미래교육 페스타</span><span class="poster-zone">ZONE 2</span></header>
+      <div class="poster-hero">
+        <div><h1>국어 <span>놀이터</span></h1><p>사자성어 퀴즈와 끝말잇기로<br>AI와 함께 읽고 말하는 국어 체험</p></div>
+        <div class="poster-art" aria-hidden="true"><span class="step-one">말</span><span class="step-two">글</span><img src="pporaengi.png" alt=""></div>
+      </div>
+      <ol class="poster-stages" aria-label="체험 순서">
+        <li><h2><span class="number step-one">1</span> AI 나이 예측</h2><p>AI가 사진을 보고 나이를 추정해 난이도를 추천해요.</p></li>
+        <li><h2><span class="number step-two">2</span> 사람이 쓴 글 찾기</h2><p>같은 사자성어를 쓴 두 글을 비교해 봐.</p></li>
+        <li><h2><span class="number step-three">3</span> AI 끝말잇기</h2><p>뽀랭이가 말한 단어의 마지막 글자를 이어 봐.</p></li>
+      </ol>
+      <section class="development" aria-labelledby="development-title">
+        <h2 class="section-heading" id="development-title">국어 놀이터는 이렇게 만들었어요</h2>
+        <p>AI가 쓴 글을 읽고, AI와 말놀이도 해 보면 어떨까? 이 질문에서 시작했어요.</p>
+        <ol class="development-grid">
+          <li><h3><span>01</span>국어 문제 기획</h3><p>같은 사자성어를 쓴 두 글을 나란히 놓았어요. 초등·중등 문제를 나누고, 고른 뒤에는 정답과 글의 단서를 보여 줘요.</p></li>
+          <li><h3><span>02</span>게임 화면과 규칙 구현</h3><p>Antigravity로 웹 게임을 만들었어요. JavaScript로 끝말잇기 첫 글자와 이미 쓴 단어를 확인하고 점수를 계산해요.</p></li>
+          <li><h3><span>03</span>카메라와 음성 연결</h3><p>Gemini가 사진 속 나이를 추정해 초등·중등 난이도를 추천해요. 브라우저는 목소리를 글자로 바꾸고 뽀랭이의 답을 읽어요.</p></li>
+          <li><h3><span>04</span>인식 오류와 행사 소음에 대비</h3><p>마이크가 듣기 시작하면 10초를 세요. 음성이 다르게 들리면 단어를 골라요. 점수는 구글 시트에 모여 순위판에 떠요.</p></li>
+        </ol>
+      </section>
+      <section class="behind-scenes" aria-labelledby="rule-title">
+        <h2 id="rule-title">‘리’ 다음에 ‘이’가 와도 될까?</h2>
+        <div class="word-flow" aria-label="오리, 이야기, 기차">
+          <span class="step-one">오<mark>리</mark></span> →
+          <span class="step-two"><mark>이</mark>야<mark>기</mark></span> →
+          <span class="step-three"><mark>기</mark>차</span>
+        </div>
+        <p>두음법칙을 게임에 넣어서 ‘리’와 ‘이’처럼 첫소리가 바뀌는 경우도 이어 말할 수 있어요.</p>
+      </section>
+      <footer class="poster-details">
+        <p>2026. 11. 25. (수) 14:00-17:30 · 서울대학교 시흥캠퍼스 2층 컨벤션센터 국어체험관</p>
+        <p>한국글로벌중학교 · 개발·운영 이종석, 박수경 교사</p>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

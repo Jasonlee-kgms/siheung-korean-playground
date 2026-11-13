@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>국어 놀이터 | 2026 시흥 AI+X 미래교육 페스타</title>
+  <link rel="stylesheet" href="styles.css?v=pporaengi-l">
+</head>
+<body>
+  <div class="app-container">
+    <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+    <header class="app-header">
+      <div class="event-lockup">
+        <span class="zone-mark">ZONE <b>2</b></span>
+        <span><strong>시흥 AI+X 미래교육 페스타</strong><small>한국글로벌중학교</small></span>
+      </div>
+      <div class="header-controls">
+        <button id="btn-sound" class="btn-utility" aria-pressed="true">효과음 켜짐</button>
+        <button id="btn-config" class="btn-utility">설정</button>
+        <button id="btn-home" class="btn-utility" hidden>처음</button>
+      </div>
+    </header>
+    <main>
+      <div class="status-bar" id="game-status" hidden>
+        <strong id="stage-badge">1 / 3 · AI 나이 예측</strong>
+        <span>내 점수 <b id="total-score">0</b></span>
+      </div>
+
+      <section id="view-home" class="view-section active" aria-labelledby="home-title">
+        <div class="home-hero">
+          <div class="hero-copy">
+            <p class="hero-kicker">2026 시흥 AI+X 미래교육 페스타</p>
+            <h1 id="home-title" tabindex="-1">국어<br><span>놀이터</span></h1>
+            <p class="hero-subtitle">AI가 사진을 보고 난이도를 추천해요.<br>글을 고르고 뽀랭이와 끝말잇기!</p>
+            <div class="actions">
+              <button id="btn-start-camera-scan" class="btn-primary-large">게임 시작 <span aria-hidden="true">→</span></button>
+              <button id="btn-view-leaderboard" class="btn-secondary">순위 보기</button>
+            </div>
+          </div>
+          <div class="word-art" aria-hidden="true">
+            <div class="block-platform"></div>
+            <span class="block-tile block-tile-one">말</span><span class="block-tile block-tile-two">글</span>
+            <img src="pporaengi.png" class="hero-avatar" alt="">
+          </div>
+        </div>
+        <ol class="stage-list" aria-label="게임 순서">
+          <li><span class="stage-number step-one">1</span><span><b>AI 나이 예측</b><small>사진으로 내게 맞는 난이도 추천받기</small></span></li>
+          <li><span class="stage-number step-two">2</span><span><b>사람이 쓴 글 찾기</b><small>두 글을 읽고 하나 고르기</small></span></li>
+          <li><span class="stage-number step-three">3</span><span><b>AI 끝말잇기</b><small>마지막 글자로 시작하는 단어 말하기</small></span></li>
+        </ol>
+      </section>
+
+      <section id="view-stage0" class="view-section" aria-labelledby="scan-heading">
+        <div class="screen-heading">
+          <h2 id="scan-heading" tabindex="-1">AI가 내 나이를 맞힐까?</h2>
+          <p id="scan-instruction"></p>
+        </div>
+        <div class="scan-layout">
+          <div class="camera-viewfinder" id="camera-viewfinder">
+            <video id="webcam-video" autoplay playsinline muted></video>
+            <canvas id="webcam-canvas" hidden></canvas>
+            <p id="camera-status" role="status">카메라를 준비하고 있어요.</p>
+            <div id="scan-laser-line" class="scan-laser"></div>
+          </div>
+          <div class="scan-panel">
+            <div class="actions">
+              <button id="btn-capture-scan" class="btn-primary-large" disabled>사진 찍기</button>
+            <button id="btn-skip-scan" class="btn-secondary">건너뛰기</button>
+            <button id="btn-retry-camera" class="btn-secondary" hidden>카메라 다시 켜기</button>
+            </div>
+            <p id="scan-notice" class="status-note" role="status"></p>
+            <div id="scan-result-card" class="scan-result-card">
+              <h3 id="scan-age-title" aria-live="polite"></h3>
+              <p id="scan-greeting-text"></p>
+              <div class="actions">
+                <button id="btn-confirm-age" class="btn-primary-large">글 찾기 시작 <span aria-hidden="true">→</span></button>
+                <button id="btn-toggle-mode-manual" class="btn-secondary">난이도 바꾸기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-stage1" class="view-section" aria-labelledby="quiz-heading">
+        <div class="screen-heading">
+          <h2 id="quiz-heading" tabindex="-1">사람이 쓴 글은 어느 쪽일까?</h2>
+          <p>두 글을 읽고, 사람이 쓴 글 하나를 골라 봐.</p>
+        </div>
+        <div class="quiz-header">
+          <span id="quiz-idiom-tag"></span><strong id="quiz-number">1 / 2 문제</strong>
+        </div>
+        <div class="timer-container" aria-hidden="true"><div id="quiz-timer-bar" class="timer-bar"></div></div>
+        <div class="cards-comparison">
+          <article id="card-a" class="card-item">
+            <h3 class="card-tag">가</h3>
+            <p id="card-text-a" class="card-text"></p>
+            <button class="card-select-btn">가 글 선택</button>
+          </article>
+          <article id="card-b" class="card-item">
+            <h3 class="card-tag">나</h3>
+            <p id="card-text-b" class="card-text"></p>
+            <button class="card-select-btn">나 글 선택</button>
+          </article>
+        </div>
+        <div id="quiz-feedback" class="quiz-feedback" role="status">
+          <h3 id="feedback-title"></h3>
+          <p id="feedback-desc"></p>
+          <p class="quiz-note">실제 글의 작성자를 확인하려면 출처도 살펴봐야 해.</p>
+        </div>
+        <button id="btn-next-quiz" class="btn-primary-large">다음 문제 →</button>
+      </section>
+
+      <section id="view-stage2" class="view-section" aria-labelledby="battle-heading">
+        <div class="screen-heading">
+          <h2 id="battle-heading" tabindex="-1">AI와 끝말잇기</h2>
+          <p>뽀랭이가 말한 단어의 마지막 글자로 시작해 봐.</p>
+        </div>
+        <div class="battle-arena">
+          <div class="ai-character-card">
+            <img class="character-avatar" id="ai-avatar-container" src="pporaengi.png" alt="">
+            <div><strong>뽀랭이</strong><p id="ai-speech-text" class="ai-speech-bubble" aria-live="polite"></p></div>
+          </div>
+          <div class="battle-play">
+            <div class="battle-status-row"><b id="battle-turn-text">1 / 5 차례</b><span id="battle-time-text">10초 · 대기 중</span></div>
+            <div class="timer-container" aria-hidden="true"><div id="battle-timer-bar" class="timer-bar"></div></div>
+            <div class="target-char-box">
+              <p>이 글자로 시작!</p>
+              <div id="target-char" class="target-char-badge" aria-live="polite">–</div>
+              <p id="target-variants" class="target-variants"></p>
+            </div>
+            <div class="mic-control-center">
+              <div class="actions">
+                <button id="btn-mic" class="btn-primary-large btn-mic" disabled>마이크로 말하기</button>
+                <button id="btn-text-fallback" class="btn-secondary" disabled>키보드로 입력</button>
+              </div>
+              <div class="mic-meter-box" aria-hidden="true"><div id="mic-meter-fill" class="mic-meter-fill"></div></div>
+              <p id="mic-status-text" class="mic-guide-text" role="status"></p>
+              <p id="speech-live-text" class="speech-live-text"></p>
+              <div id="speech-choices" class="speech-choices" hidden>
+                <p>말한 단어를 골라 줘.</p>
+                <div id="speech-choice-buttons" class="actions"></div>
+              </div>
+              <p id="mic-trouble-hint" class="mic-trouble-hint" role="status"></p>
+              <button id="btn-chance" class="btn-utility" disabled>힌트 1회</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-result" class="view-section" aria-labelledby="result-heading">
+        <div class="screen-heading"><h2 id="result-heading" tabindex="-1">도전 완료!</h2></div>
+        <div id="ai-victory" class="ai-victory" hidden>
+          <div class="victory-avatar" role="img" aria-label="L 춤을 추는 뽀랭이">
+            <img id="victory-avatar" class="victory-frame frame-ready" src="pporaengi.png" alt="">
+            <div class="victory-frame victory-dance-sprite" aria-hidden="true"></div>
+          </div>
+          <div>
+            <p><strong>이번엔 뽀랭이 승리!</strong><span>한 번 더 도전해 볼래?</span></p>
+            <button id="btn-replay-dance" class="btn-utility">L 춤 다시 보기</button>
+          </div>
+        </div>
+        <div class="result-hero">
+          <div class="score-summary">
+            <p id="tier-badge-text"></p>
+            <p class="final-score-text"><strong id="final-score-val">0</strong><span>점</span></p>
+            <dl class="score-breakdown">
+              <div><dt>글 찾기</dt><dd id="res-score-s1"></dd></div>
+              <div><dt>끝말잇기</dt><dd id="res-score-s2"></dd></div>
+              <div id="win-bonus" hidden><dt>완주 보너스</dt><dd>50점</dd></div>
+            </dl>
+          </div>
+          <div class="nickname-input-box">
+            <label for="nickname-input">순위판에 올릴 별명</label>
+            <input id="nickname-input" maxlength="8" placeholder="예: 배곧호랑이" autocomplete="off" required>
+            <p>실명 대신 한글·영문·숫자 등으로 8글자 이내의 별명을 써 줘.</p>
+            <button id="btn-save-rank" class="btn-primary-large">내 점수 올리기</button>
+            <p id="rank-save-status" class="status-note" role="status"></p>
+            <button id="btn-restart" class="btn-secondary">다시 도전</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-leaderboard" class="view-section" aria-labelledby="leaderboard-heading">
+        <div class="screen-heading split-heading">
+          <div><h2 id="leaderboard-heading" tabindex="-1">오늘의 순위</h2><p>국어 놀이터 상위 10명의 기록</p></div>
+          <div class="actions">
+            <a href="leaderboard.html" target="_blank" rel="noopener" class="btn-secondary">큰 화면으로 보기 ↗</a>
+            <button id="btn-lb-back" class="btn-secondary">처음으로</button>
+          </div>
+        </div>
+        <p id="game-ranking-status" class="status-note" role="status"></p>
+        <div class="table-wrap">
+          <table class="leaderboard-table">
+            <thead><tr><th>순위</th><th>별명</th><th>난이도</th><th>점수</th><th>등록 시각</th></tr></thead>
+            <tbody id="ranking-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <footer class="app-footer"><span>2026 시흥 AI+X 미래교육 페스타</span><span>한국글로벌중학교</span></footer>
+  </div>
+
+  <dialog id="config-modal" class="modal-content" aria-labelledby="config-heading">
+    <h2 id="config-heading">운영 설정</h2>
+    <p id="ai-engine-status" class="ai-mode-indicator"></p>
+    <label for="voice-select-dropdown">뽀랭이 목소리</label>
+    <select id="voice-select-dropdown"><option value="">기본 목소리</option></select>
+    <button id="btn-test-voice" class="btn-secondary">미리 듣기</button>
+    <label for="gemini-api-key-input">Gemini API 키</label>
+    <input type="password" id="gemini-api-key-input" autocomplete="off">
+    <label class="checkbox-label"><input type="checkbox" id="toggle-force-local"> 오프라인 모드 사용</label>
+    <div class="actions"><button id="btn-save-config" class="btn-primary-large">저장</button><button id="btn-close-config" class="btn-secondary">닫기</button></div>
+  </dialog>
+
+  <dialog id="text-input-modal" class="modal-content" aria-labelledby="text-modal-heading">
+    <h2 id="text-modal-heading">단어 입력</h2>
+    <label for="text-modal-input">두 글자 이상 써 줘.</label>
+    <input id="text-modal-input" autocomplete="off" autofocus>
+    <div class="actions"><button id="btn-submit-text" class="btn-primary-large">제출</button><button id="btn-close-modal" class="btn-secondary">취소</button></div>
+  </dialog>
+
+  <script src="rankings.js"></script>
+  <script src="words.js"></script>
+  <script src="app.js?v=pporaengi-l"></script>
+</body>
+</html>
