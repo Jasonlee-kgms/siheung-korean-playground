@@ -68,66 +68,11 @@ const sfx = new SoundFX();
 // ==========================================
 // [2] 퀴즈 데이터셋
 // ==========================================
-const QUIZ_DATA = {
-  elem: [
-    {
-      idiom: "일석이조",
-      title: "학교 대청소 시간",
-      textA: "오늘 교실 대청소를 하면서 바닥에 떨어진 지우개를 3개나 주웠다. 짝꿍한테 돌려주고 칭찬도 듣고 교실도 깨끗해졌으니 완전 일석이조다! 기분이 날아갈 것 같았다.",
-      textB: "대청소 시간에 교실을 정돈하며 잃어버린 학용품을 발견했습니다. 환경이 쾌적해지고 친구를 도울 수 있어 일석이조의 유익함을 느낀 보람찬 하루였습니다.",
-      humanChoice: "A",
-      explanation: "A가 사람의 글입니다! '지우개 3개', '기분이 날아갈 것 같았다' 등 구체적인 경험과 자연스러운 감정이 살아있어요. B는 AI 특유의 훈화 말씀 같은 정형화된 표현입니다."
-    },
-    {
-      idiom: "동문서답",
-      title: "엄마와의 저녁 대화",
-      textA: "질문의 본질을 벗어나 엉뚱하게 대답하는 태도를 동문서답이라고 합니다. 부모님의 질문에 엉뚱한 대답을 하면 가족 간 소통을 저해할 수 있으므로 주의해야 합니다.",
-      textB: "엄마가 '오늘 학원 숙제 다 끝냈니?'라고 물어보셨는데 너무 찔려서 '오늘 급식에 돈가스 나왔는데 진짜 맛있었어!'라고 동문서답을 해버렸다. 등짝 맞을 뻔했다.",
-      humanChoice: "B",
-      explanation: "B가 사람의 글입니다! 숙제 질문에 돈가스 얘기를 꺼내며 '등짝 맞을 뻔했다'는 생생하고 유쾌한 현실 에피소드는 AI가 흉내 내기 어려운 인간만의 유머입니다."
-    },
-    {
-      idiom: "작심삼일",
-      title: "새해 줄넘기 운동 계획",
-      textA: "새해를 맞아 매일 줄넘기 500개씩 하겠다고 다짐했다. 그런데 날씨가 너무 춥고 발목도 시려워서 딱 사흘째 되는 날 전기장판 속에 누워버렸다. 역시 작심삼일은 과학이다.",
-      textB: "새해 목표로 규칙적인 줄넘기 운동을 설정하였으나, 결심이 오래가지 못하고 3일 만에 중단되는 작심삼일을 경험했습니다. 앞으로는 꾸준한 실천 의지가 필요합니다.",
-      humanChoice: "A",
-      explanation: "A가 사람의 글입니다! '전기장판 속에 누워버렸다', '작심삼일은 과학이다'라는 학생다운 현실적이고 재치 있는 표현이 돋보입니다."
-    }
-  ],
-  middle: [
-    {
-      idiom: "온고지신",
-      title: "AI 시대와 역사 공부",
-      textA: "옛것을 익혀 새것을 안다는 온고지신처럼, AI 시대를 살아가는 우리는 과거의 고전 문학과 철학을 깊이 배워야 비로소 기술을 올바르게 이끄는 주인이 될 수 있습니다.",
-      textB: "챗GPT로 옛날 역사 퀴즈를 풀다가 틀린 답이 나와서 황당했다. 책에서 읽었던 옛 역사를 내가 직접 알고 있어야 AI가 엉뚱한 거짓말을 할 때 바로잡을 수 있다는 걸 깨달았다. 온고지신이 따로 없다.",
-      humanChoice: "B",
-      explanation: "B가 사람의 글입니다! 직접 AI를 쓰면서 겪은 오류(환각 현상) 경험을 바탕으로 비판적 사고를 이끌어낸 생생한 학생의 성찰 글입니다. A는 전형적인 AI 논술문입니다."
-    },
-    {
-      idiom: "역지사지",
-      title: "모둠 과제와 친구의 사정",
-      textA: "수행평가 모둠 과제에서 한 친구가 계속 연락을 안 받아서 엄청 화가 났다. 다음 날 따지려고 했는데 그 친구가 동생이 많이 아파서 병원에 다녀왔다고 했다. 내 입장만 생각했던 게 부끄러웠다. 역지사지는 참 어렵다.",
-      textB: "상대방의 입장에서 생각해보는 역지사지의 태도는 협동 학습에서 갈등을 해결하는 핵심 요소입니다. 타인의 사정을 배려하지 않으면 원활한 소통을 이루기 어렵습니다.",
-      humanChoice: "A",
-      explanation: "A가 사람의 글입니다! 화가 났다가 진실을 알고 부끄러움을 느끼는 솔직한 심리 변화 묘사는 인간 고유의 감정선입니다."
-    },
-    {
-      idiom: "다다익선",
-      title: "동아리 축제 부스 준비",
-      textA: "축제 부스에 쓸 사은품은 많을수록 좋다는 생각에 다다익선이라는 말처럼 기념품 수량을 넉넉하게 준비하여 참가자들에게 배부하였습니다.",
-      textB: "축제 때 뽑기 상품으로 젤리를 준비했는데 친구들이 벌떼처럼 몰려와서 30분 만에 털렸다. '상품은 다다익선이라니까!'라며 담당 친구한테 잔소리를 퍼부었다. 내년엔 박스째로 사야겠다.",
-      humanChoice: "B",
-      explanation: "B가 사람의 글입니다! '벌떼처럼 몰려왔다', '30분 만에 털렸다', '잔소리를 퍼부었다' 같은 구체적 어휘와 생동감이 넘칩니다."
-    }
-  ]
-};
-
 // ==========================================
 // [3] 게임 전역 상태
 // ==========================================
 const state = {
-  mode: 'elem',
+  level: GAME_LEVELS[1],
   totalScore: 0,
   stage1Score: 0,
   stage2Score: 0,
@@ -160,6 +105,7 @@ const state = {
   battleTurn: 1,
   turnOpen: false,
   maxTurns: 5,
+  assistedTurns: 0,
   targetChar: "시",
   usedWords: new Set(),
   bTimer: null,
@@ -210,7 +156,7 @@ const dom = {
   viewfinder: document.getElementById('camera-viewfinder'),
   btnRetryCamera: document.getElementById('btn-retry-camera'),
   btnConfirmAge: document.getElementById('btn-confirm-age'),
-  btnToggleModeManual: document.getElementById('btn-toggle-mode-manual'),
+  levelSelect: document.getElementById('game-level'),
   
   // Stage 1
   qTimerBar: document.getElementById('quiz-timer-bar'),
@@ -422,6 +368,11 @@ const ageErrorMessages = {
   key_rejected: '사진을 찍었어요. Netlify에 저장한 Gemini API 키와 프로젝트 권한을 확인해 주세요.',
   rate_limit: '사진을 찍었어요. Gemini 사용량 한도에 도달했어요. 잠시 후 다시 시도해 주세요.',
   timeout: '사진을 찍었어요. Gemini 응답이 늦어지고 있어요. 다시 시도하거나 난이도를 직접 골라 주세요.',
+  project_setup: 'Gemini 프로젝트 설정으로 분석이 중단됐어요. 운영자는 Google AI Studio의 프로젝트 및 결제 설정을 확인해 주세요.',
+  model_unavailable: '현재 Gemini 모델을 사용할 수 없어요. 운영자는 API 키가 연결된 프로젝트의 모델 사용 권한을 확인해 주세요.',
+  request_rejected: 'Gemini가 사진 분석 요청을 받지 못했어요. 운영자에게 알려 주거나 난이도를 직접 골라 주세요.',
+  image_blocked: '이 사진은 Gemini가 분석할 수 없어요. 난이도를 직접 골라 주세요.',
+  incomplete_response: 'Gemini가 답을 끝까지 돌려주지 못했어요. 다시 시도하거나 난이도를 직접 골라 주세요.',
   no_face: '사진에서 얼굴을 뚜렷하게 확인하기 어려워요. 얼굴을 화면 가운데에 두고 다시 찍어 주세요.',
   invalid_image: '사진을 분석용으로 읽을 수 없어요. 다시 찍어 주세요.',
   bad_response: '사진을 찍었어요. Gemini가 나이 추정 결과를 돌려주지 않았어요. 다시 시도하거나 난이도를 직접 골라 주세요.',
@@ -623,8 +574,9 @@ function showSpeechChoices(result) {
     return;
   }
   const starts = getInitialVariants(state.targetChar);
-  const playable = word => word.length >= 2 && starts.includes(word[0])
-    && !state.usedWords.has(word) && !WORD_DICTIONARY.killerEndChars.includes(word.slice(-1));
+  const playable = word => word.length >= state.level.minLength && starts.includes(word[0])
+    && !state.usedWords.has(word) && !WORD_DICTIONARY.killerEndChars.includes(word.slice(-1))
+    && canContinue(word, 2 * (state.maxTurns - state.battleTurn) + 1, false);
   const alternatives = recognized.filter(playable);
   const similar = Array.from(ALL_WORDS).filter(word => playable(word) && !alternatives.includes(word))
     .map(word => ({
@@ -752,6 +704,11 @@ function initApp() {
   document.getElementById('btn-replay-dance').addEventListener('click', playVictoryDance);
   updateEngineStatus();
   setCharacterMood('idle');
+  for (const level of GAME_LEVELS) dom.levelSelect.add(new Option(level.label, level.id));
+  dom.levelSelect.addEventListener('change', () => {
+    state.level = GAME_LEVELS.find(level => level.id === dom.levelSelect.value);
+    dom.scanAgeTitle.textContent = `선택한 난이도 · ${state.level.label}`;
+  });
 
   // 설정
   dom.btnConfig.addEventListener('click', () => {
@@ -832,10 +789,10 @@ function initApp() {
     dom.btnCaptureScan.disabled = false;
     dom.btnCaptureScan.textContent = "다시 찍기";
 
-    state.mode = result?.mode ?? 'elem';
-    const modeLabel = state.mode === 'elem' ? '초등' : '중등';
+    state.level = result.age ? GAME_LEVELS.find(level => result.age < level.ageBelow) : GAME_LEVELS[1];
+    dom.levelSelect.value = state.level.id;
     dom.scanNotice.textContent = result.age ? '나이 추정을 마쳤어요.' : ageErrorMessages[result.error] || ageErrorMessages.bad_response;
-    dom.scanAgeTitle.textContent = result.age ? `Gemini 추천 · ${modeLabel}` : `선택한 난이도 · ${modeLabel}`;
+    dom.scanAgeTitle.textContent = `${result.age ? 'Gemini 추천' : '선택한 난이도'} · ${state.level.label}`;
     dom.scanGreetingText.textContent = result.age
       ? `AI가 추정한 나이 · 약 ${result.age}세. 원하는 난이도로 바꿀 수 있어.`
       : '사진 분석 없이 시작해요. 원하는 난이도로 바꿀 수 있어.';
@@ -846,25 +803,20 @@ function initApp() {
   });
   dom.btnRetryCamera.addEventListener('click', startWebcam);
 
-  dom.btnToggleModeManual.addEventListener('click', () => {
-    state.mode = (state.mode === 'elem') ? 'middle' : 'elem';
-    dom.scanAgeTitle.textContent = `선택한 난이도 · ${state.mode === 'elem' ? '초등' : '중등'}`;
-    sfx.tick();
-  });
-
   dom.btnConfirmAge.addEventListener('click', () => {
     stopWebcam();
     startGame();
   });
   dom.btnSkipScan.addEventListener('click', () => {
     stopWebcam();
-    state.mode = 'elem';
+    state.level = GAME_LEVELS[1];
+    dom.levelSelect.value = state.level.id;
     dom.btnRetryCamera.hidden = true;
     dom.cameraStatus.hidden = false;
     dom.cameraStatus.textContent = '사진 없이 시작해요.';
     dom.scanNotice.textContent = '';
-    dom.scanAgeTitle.textContent = '선택한 난이도 · 초등';
-    dom.scanGreetingText.textContent = '초등 또는 중등 난이도를 골라 줘.';
+    dom.scanAgeTitle.textContent = `선택한 난이도 · ${state.level.label}`;
+    dom.scanGreetingText.textContent = '다섯 가지 난이도 중 하나를 골라 줘.';
     dom.scanResultCard.classList.add('active');
     dom.btnConfirmAge.focus();
   });
@@ -935,18 +887,36 @@ function resetGame() {
   state.stage2Score = 0;
   state.currentQIndex = 0;
   state.battleTurn = 1;
+  state.assistedTurns = 0;
   state.usedWords.clear();
   state.chanceUsed = false;
   dom.totalScoreDisplay.textContent = "0";
   dom.btnChance.textContent = "힌트 1회";
 }
 
+const previousQuiz = new Map();
+
+function shuffled(items) {
+  const pool = [...items];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+}
+
 function startGame() {
   resetGame();
   sfx.init();
-  const pool = [...QUIZ_DATA[state.mode]];
-  pool.sort(() => Math.random() - 0.5);
-  state.stage1Questions = pool.slice(0, 2);
+  const { id } = state.level;
+  const recent = previousQuiz.get(id) || [];
+  const selected = shuffled(QUIZ_LEVELS[id].filter(item => !recent.includes(item))).slice(0, 2);
+  previousQuiz.set(id, selected);
+  state.stage1Questions = selected.map(([title, prompt, first, second, answer, explanation]) => {
+    const swap = Math.random() < 0.5;
+    return { title, prompt, textA: swap ? second : first, textB: swap ? first : second,
+      correctChoice: answer === Number(swap) ? 'A' : 'B', explanation };
+  });
   startStage1();
 }
 
@@ -954,7 +924,7 @@ function startGame() {
 // [Stage 1] 글 판별 퀴즈
 // ==========================================
 function startStage1() {
-  dom.stageBadge.textContent = `2 / 3 · 글 찾기 (${state.mode === 'elem' ? '초등' : '중등'})`;
+  dom.stageBadge.textContent = `2 / 3 · 글 비교 퀴즈 (${state.level.label})`;
   showView(dom.viewStage1);
   loadQuizQuestion(0);
 }
@@ -963,8 +933,9 @@ function loadQuizQuestion(index) {
   state.currentQIndex = index;
   const q = state.stage1Questions[index];
   
-  dom.qNumber.textContent = `${index + 1} / 2 문제`;
-  dom.qIdiomTag.textContent = `${q.idiom} · ${q.title}`;
+  dom.qNumber.textContent = `${index + 1} / ${state.stage1Questions.length} 문제`;
+  dom.qIdiomTag.textContent = q.title;
+  document.getElementById('quiz-question').textContent = q.prompt;
   dom.qTextA.textContent = q.textA;
   dom.qTextB.textContent = q.textB;
   
@@ -996,9 +967,9 @@ function handleQuizChoice(choice) {
   setQuizChoices(false);
   
   const q = state.stage1Questions[state.currentQIndex];
-  const isCorrect = (choice === q.humanChoice);
+  const isCorrect = (choice === q.correctChoice);
   const selectedCard = (choice === 'A') ? dom.qCardA : dom.qCardB;
-  const correctCard = (q.humanChoice === 'A') ? dom.qCardA : dom.qCardB;
+  const correctCard = (q.correctChoice === 'A') ? dom.qCardA : dom.qCardB;
   
   let earned = 0;
   if (isCorrect) {
@@ -1016,7 +987,7 @@ function handleQuizChoice(choice) {
     sfx.wrong();
     selectedCard.classList.add('selected-wrong');
     correctCard.classList.add('selected-correct');
-    dom.qFeedbackTitle.textContent = `정답은 ‘${q.humanChoice === 'A' ? '가' : '나'}’ 글이야.`;
+    dom.qFeedbackTitle.textContent = `정답은 ‘${q.correctChoice === 'A' ? '가' : '나'}’ 글이야.`;
   }
 
   state.stage1Score += earned;
@@ -1033,10 +1004,7 @@ function setQuizChoices(enabled) {
 }
 
 function showQuizFeedback(question) {
-  dom.qFeedbackDesc.textContent = question.explanation
-    .replace(/^[AB]가 사람의 글입니다! /, '')
-    .replaceAll('A는', '‘가’ 글은')
-    .replaceAll('B는', '‘나’ 글은');
+  dom.qFeedbackDesc.textContent = question.explanation;
   dom.qFeedback.classList.add('show');
   dom.btnNextQuiz.style.display = 'block';
   dom.btnNextQuiz.textContent = state.currentQIndex === 0 ? "다음 문제 →" : "끝말잇기 시작 →";
@@ -1046,10 +1014,10 @@ function handleQuizTimeout() {
   sfx.wrong();
   setQuizChoices(false);
   const q = state.stage1Questions[state.currentQIndex];
-  const correctCard = (q.humanChoice === 'A') ? dom.qCardA : dom.qCardB;
+  const correctCard = (q.correctChoice === 'A') ? dom.qCardA : dom.qCardB;
   correctCard.classList.add('selected-correct');
 
-  dom.qFeedbackTitle.textContent = `시간이 다 됐어. 정답은 ‘${q.humanChoice === 'A' ? '가' : '나'}’ 글이야.`;
+  dom.qFeedbackTitle.textContent = `시간이 다 됐어. 정답은 ‘${q.correctChoice === 'A' ? '가' : '나'}’ 글이야.`;
   showQuizFeedback(q);
 }
 
@@ -1061,11 +1029,46 @@ function nextQuizStep() {
 // ==========================================
 // [Stage 2] 음성 끝말잇기 배틀
 // ==========================================
+const previousStarter = new Map();
+const battleWords = new Map();
+for (const word of ALL_WORDS) {
+  if (word.length < 2 || WORD_DICTIONARY.killerEndChars.includes(word.slice(-1))) continue;
+  if (!battleWords.has(word[0])) battleWords.set(word[0], []);
+  battleWords.get(word[0]).push(word);
+}
+
+function availableWords(lastChar, used, minLength = 2) {
+  return getInitialVariants(lastChar).flatMap(char => battleWords.get(char) || [])
+    .filter(word => word.length >= minLength && !used.has(word));
+}
+
+function hasChain(lastChar, steps, used, isPlayer, minLength) {
+  if (steps === 0) return true;
+  for (const word of availableWords(lastChar, used, isPlayer ? minLength : 2)) {
+    used.add(word);
+    const works = hasChain(word.slice(-1), steps - 1, used, !isPlayer, minLength);
+    used.delete(word);
+    if (works) return true;
+  }
+  return false;
+}
+
+function canContinue(word, steps, nextIsPlayer) {
+  return hasChain(word.slice(-1), steps, new Set([...state.usedWords, word]), nextIsPlayer, state.level.minLength);
+}
+
+function findPlayablePlayerWords() {
+  const stepsAfterPlayer = 2 * (state.maxTurns - state.battleTurn) + 1;
+  return availableWords(state.targetChar, state.usedWords, state.level.minLength)
+    .filter(word => canContinue(word, stepsAfterPlayer, false));
+}
+
 function startStage2() {
   dom.stageBadge.textContent = "3 / 3 · 끝말잇기";
   showView(dom.viewStage2);
   
   state.battleTurn = 1;
+  state.assistedTurns = 0;
   state.usedWords.clear();
   setCharacterMood('idle');
   dom.bTurnDisplay.textContent = '1 / 5 차례';
@@ -1076,8 +1079,11 @@ function startStage2() {
   dom.micStatusText.textContent = '뽀랭이가 먼저 말해요.';
   dom.speechLiveText.textContent = '';
 
-  const starters = ["시흥", "국어", "미래", "로봇", "사자성어"];
-  const startWord = starters[Math.floor(Math.random() * starters.length)];
+  const { id, starters } = state.level;
+  const eligible = shuffled(starters).filter(word => word !== previousStarter.get(id));
+  const startWord = eligible.find(word => canContinue(word, state.maxTurns * 2, true))
+    || starters.find(word => canContinue(word, state.maxTurns * 2, true));
+  previousStarter.set(id, startWord);
   state.usedWords.add(startWord);
 
   const introMsg = `반가워. 난 뽀랭이야. 첫 단어는 '${startWord}'로 시작한다.`;
@@ -1092,6 +1098,7 @@ function preparePlayerTurn(lastChar) {
   state.targetChar = lastChar;
   dom.bTurnDisplay.textContent = `${state.battleTurn} / ${state.maxTurns} 차례`;
   dom.targetCharBadge.textContent = lastChar;
+  document.getElementById('word-rule').textContent = `이 글자로 ${state.level.minLength}글자 이상!`;
 
   const variants = getInitialVariants(lastChar);
   if (variants.length > 1) {
@@ -1164,8 +1171,8 @@ function closePlayerTurn() {
 async function processPlayerWord(rawWord) {
   if (!state.turnOpen) return;
   const word = rawWord.replace(/[^가-힣]/g, '');
-  if (!word || word.length < 2) {
-    dom.micStatusText.textContent = "두 글자 이상의 한글 단어를 말하거나 입력해 줘.";
+  if (word.length < state.level.minLength) {
+    dom.micStatusText.textContent = `${state.level.minLength}글자 이상의 한글 단어를 말하거나 입력해 줘.`;
     return;
   }
 
@@ -1191,6 +1198,10 @@ async function processPlayerWord(rawWord) {
     const defenseMsg = `앗! '${word}'의 끝 글자 '${lastChar}'(은)는 너무 강력한 반칙 마법이야. 다른 단어로 다시 말해줘.`;
     dom.aiSpeechText.textContent = `"${defenseMsg}"`;
     speakAI(defenseMsg);
+    return;
+  }
+  if (!canContinue(word, 2 * (state.maxTurns - state.battleTurn) + 1, false)) {
+    dom.micStatusText.textContent = `게임 사전에서 ‘${lastChar}’ 다음을 충분히 이을 수 없어요. 다른 단어를 골라 줘.`;
     return;
   }
 
@@ -1237,47 +1248,38 @@ async function processPlayerWord(rawWord) {
 
 async function executeAITurn(playerLastChar, playerWord) {
   const attempt = state.gameAttempt;
-  if (state.battleTurn >= state.maxTurns) {
-    finishGame(true);
-    return;
-  }
-
-  state.battleTurn++;
-
-  const replyObj = state.geminiConfigured === false ? null
-    : await requestGemini({ action: 'word', word: playerWord, mode: state.mode }, 3800);
+  const remaining = 2 * (state.maxTurns - state.battleTurn);
+  const difficulty = GAME_LEVELS.indexOf(state.level);
+  const replyObj = difficulty < 3 || state.geminiConfigured === false ? null
+    : await requestGemini({ action: 'word', word: playerWord, mode: state.level.group }, 3800);
   if (attempt !== state.gameAttempt) return;
   const variants = getInitialVariants(playerLastChar);
-  const canReply = word => typeof word === 'string' && word.length >= 2
+  const canReply = word => typeof word === 'string' && /^[가-힣]{2,32}$/.test(word)
     && variants.includes(word[0]) && !state.usedWords.has(word)
-    && !WORD_DICTIONARY.killerEndChars.includes(word.slice(-1));
+    && !WORD_DICTIONARY.killerEndChars.includes(word.slice(-1))
+    && canContinue(word, remaining, true);
 
   let candidate = null;
   let replyText = "";
   let mood = "idle";
 
-  if (canReply(replyObj?.word) && typeof replyObj.reaction === 'string') {
+  if (canReply(replyObj?.word) && typeof replyObj.reaction === 'string' && replyObj.reaction.includes(replyObj.word)) {
     candidate = replyObj.word;
     replyText = replyObj.reaction;
     mood = replyObj.mood || "idle";
   }
 
   if (!candidate) {
-    const replies = Array.from(ALL_WORDS).filter(canReply);
-    if (!replies.length) {
-      const message = '뽀랭이가 이을 단어를 찾지 못했어. 네가 이겼어!';
-      dom.aiSpeechText.textContent = message;
-      speakAI(message, () => finishGame(true));
+    const pool = shuffled(availableWords(playerLastChar, state.usedWords).filter(canReply));
+    const options = word => availableWords(word.slice(-1), new Set([...state.usedWords, word]), state.level.minLength).length;
+    pool.sort((a, b) => options(b) - options(a) || a.length - b.length);
+    const first = Math.floor(pool.length * difficulty / GAME_LEVELS.length);
+    const last = Math.max(first + 1, Math.ceil(pool.length * (difficulty + 1) / GAME_LEVELS.length));
+    candidate = shuffled(pool.slice(first, last))[0];
+    if (!candidate) {
+      finishGame(state.assistedTurns === 0);
       return;
     }
-    const playableReplies = replies.filter(word => {
-      const starts = getInitialVariants(word.slice(-1));
-      return Array.from(ALL_WORDS).some(next => next !== word && next.length >= 2
-        && starts.includes(next[0]) && !state.usedWords.has(next)
-        && !WORD_DICTIONARY.killerEndChars.includes(next.slice(-1)));
-    });
-    const pool = playableReplies.length ? playableReplies : replies;
-    candidate = pool[Math.floor(Math.random() * pool.length)];
     replyText = `내 차례다. '${candidate}'!`;
     mood = "idle";
   }
@@ -1289,19 +1291,31 @@ async function executeAITurn(playerLastChar, playerWord) {
   setTimeout(() => {
     if (attempt !== state.gameAttempt) return;
     speakAI(replyText, () => {
+      if (state.battleTurn === state.maxTurns) {
+        finishGame(state.assistedTurns === 0);
+        return;
+      }
+      state.battleTurn++;
       preparePlayerTurn(candidate.slice(-1));
     });
   }, 300);
 }
 
 function handleBattleTimeout() {
+  const [word] = shuffled(findPlayablePlayerWords());
   closePlayerTurn();
-  dom.micStatusText.textContent = "시간이 다 됐어요.";
+  if (!word) {
+    finishGame(false);
+    return;
+  }
+  state.assistedTurns++;
+  state.usedWords.add(word);
+  dom.micStatusText.textContent = '시간이 지나 이번 차례는 0점이에요.';
   sfx.wrong();
   setCharacterMood('idle');
-  const timeoutMsg = "아쉽게도 10초가 지났구나. 그래도 멋진 승부였어.";
+  const timeoutMsg = `시간이 다 됐어. 이번에는 ‘${word}’로 이어 볼게!`;
   dom.aiSpeechText.textContent = `"${timeoutMsg}"`;
-  speakAI(timeoutMsg, () => finishGame(false));
+  speakAI(timeoutMsg, () => executeAITurn(word.slice(-1), word));
 }
 
 function useHintChance() {
@@ -1310,8 +1324,7 @@ function useHintChance() {
   dom.btnChance.disabled = true;
   dom.btnChance.textContent = "힌트 사용 완료";
 
-  const variants = getInitialVariants(state.targetChar);
-  const candidate = Array.from(ALL_WORDS).find(w => variants.includes(w[0]) && !state.usedWords.has(w));
+  const [candidate] = shuffled(findPlayablePlayerWords());
   
   if (candidate) {
     const hintMsg = `힌트야. '${candidate[0]}'로 시작하는 '${candidate}' 단어는 어때?`;
@@ -1395,7 +1408,7 @@ async function saveNicknameRanking() {
     id: crypto.randomUUID(),
     nickname: nick,
     score: state.totalScore,
-    mode: state.mode === 'elem' ? '초등' : '중등'
+    mode: state.level.group === 'elem' ? '초등' : '중등'
   };
   state.savingScore = true;
   dom.nicknameInput.disabled = true;
