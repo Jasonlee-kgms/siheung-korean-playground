@@ -1,4 +1,4 @@
-const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
 const maxBodyLength = 500000;
 const ageSchema = {
   type: 'OBJECT',
@@ -6,6 +6,7 @@ const ageSchema = {
   properties: { age: { type: 'INTEGER' } }
 };
 const moods = ['idle', 'nervous', 'amazed'];
+const blockedReasons = new Set(['SAFETY', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII', 'IMAGE_SAFETY', 'IMAGE_PROHIBITED_CONTENT']);
 const wordSchema = {
   type: 'OBJECT',
   required: ['word', 'reaction', 'mood'],
@@ -81,8 +82,8 @@ export default async function gemini(request) {
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: isAge ? ageSchema : wordSchema,
-          thinkingConfig: { thinkingBudget: 0 },
-          maxOutputTokens: isAge ? 40 : 180
+          thinkingConfig: { thinkingLevel: 'MINIMAL' },
+          maxOutputTokens: isAge ? 256 : 512
         }
       })
     });
@@ -92,10 +93,18 @@ export default async function gemini(request) {
       if ([401, 403].includes(response.status) || data?.error?.details?.some(detail => detail.reason === 'API_KEY_INVALID')) {
         return json({ error: 'key_rejected' }, 502);
       }
+      if (data?.error?.status === 'FAILED_PRECONDITION') return json({ error: 'project_setup' }, 502);
+      if (response.status === 404) return json({ error: 'model_unavailable' }, 502);
+      if (response.status === 400) return json({ error: 'request_rejected' }, 502);
       return json({ error: 'bad_response' }, 502);
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.filter(part => !part.thought).map(part => part.text || '').join('');
+    const candidate = data?.candidates?.[0];
+    if (blockedReasons.has(data?.promptFeedback?.blockReason) || blockedReasons.has(candidate?.finishReason)) {
+      return json({ error: 'image_blocked' }, 422);
+    }
+    if (candidate?.finishReason === 'MAX_TOKENS') return json({ error: 'incomplete_response' }, 502);
+    const text = candidate?.content?.parts?.filter(part => !part.thought).map(part => part.text || '').join('');
     const result = JSON.parse(text || 'null');
     if (isAge) {
       const age = result?.age;
