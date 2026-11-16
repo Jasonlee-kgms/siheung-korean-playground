@@ -1403,7 +1403,8 @@ function playVictoryDance() {
   voice.currentTime = 0;
   voice.play().catch(error => {
     if (error.name !== 'AbortError' && dom.viewResult.classList.contains('active')) {
-      speakAI('엘을 가져가!', null, { rate: 1.15, pitch: 1.35 });
+      speakAI('엘을 가져가, 크림치즈허니! 엘을 가져가, 크리스크로스! 엘을 가져가, 야채! 엘을 가져가, 셀카!',
+        null, { rate: 1.15, pitch: 1.35 });
     }
   });
   const avatar = document.querySelector('.victory-avatar');
