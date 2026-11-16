@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>국어 놀이터 | 2026 시흥 AI+X 미래교육 페스타</title>
-  <link rel="stylesheet" href="styles.css?v=quiz-keyboard-6">
+  <link rel="stylesheet" href="styles.css?v=victory-dance-10">
 </head>
 <body>
   <div class="app-container">
@@ -156,12 +156,20 @@
         </div>
         <div id="ai-victory" class="ai-victory" hidden>
           <audio id="victory-voice" src="pporaengi-l-voice.mp3?v=2" preload="auto" loop></audio>
-          <div class="victory-avatar" role="img" aria-label="L 춤을 추는 뽀랭이">
+          <div class="victory-avatar" role="img" aria-label="노래에 맞춰 춤추는 뽀랭이">
             <img id="victory-avatar" class="victory-frame frame-ready" src="pporaengi.png" alt="">
             <div class="victory-frame victory-dance-sprite" aria-hidden="true"></div>
+            <div class="victory-frame victory-rig" aria-hidden="true">
+              <i class="dance-limb dance-leg dance-leg-left"></i>
+              <i class="dance-limb dance-leg dance-leg-right"></i>
+              <i class="dance-limb dance-arm dance-arm-left"></i>
+              <i class="dance-limb dance-arm dance-arm-right"><i class="dance-phone"></i></i>
+              <i class="dance-torso"></i>
+              <i class="dance-head"></i>
+            </div>
           </div>
           <div>
-            <p><strong>이번엔 뽀랭이 승리!</strong><span>“L을 가져가!”</span></p>
+            <p><strong>이번엔 뽀랭이 승리!</strong><span id="victory-lyric">“L을 가져가!”</span></p>
             <button id="btn-replay-dance" class="btn-utility">L 춤 다시 보기</button>
           </div>
         </div>
@@ -228,6 +236,6 @@
   <script src="rankings.js"></script>
   <script src="words.js?v=5-levels"></script>
   <script src="quiz-levels.js?v=6"></script>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

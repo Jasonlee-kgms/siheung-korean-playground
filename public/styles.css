@@ -133,12 +133,64 @@ button:disabled { cursor: default; opacity: .55; }
 .victory-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; visibility: hidden; }
 .victory-avatar:not([data-frame]) .frame-ready,
 .victory-avatar[data-frame="ready"] .frame-ready { visibility: visible; }
-.victory-avatar[data-frame]:not([data-frame="ready"]) .victory-dance-sprite { visibility: visible; }
+.victory-avatar[data-phrase="l"] .victory-dance-sprite,
+.victory-avatar[data-phrase]:not([data-phrase="l"]) .victory-rig { visibility: visible; }
 .victory-dance-sprite { background: url("pporaengi-l-sprites.png") 0 0 / 200% 200% no-repeat; }
 .victory-avatar[data-frame="left"] .victory-dance-sprite { background-position: right top; transform: translateX(3%); }
 .victory-avatar[data-frame="right"] .victory-dance-sprite { background-position: left bottom; transform: translateX(-3%); }
 .victory-avatar[data-frame="land"] .victory-dance-sprite { background-position: right bottom; transform: translateY(1.5%); }
 .victory-avatar[data-frame="hop"] .victory-dance-sprite { transform: translateY(-5.5%); }
+.victory-rig {
+  transform: translate(var(--dance-x, 0), var(--dance-y, 0)) rotate(var(--dance-tilt, 0deg));
+  transition: transform .17s ease-out;
+}
+.dance-head {
+  position: absolute; inset: 0; z-index: 2;
+  background: url("pporaengi.png") center / 100% 100% no-repeat;
+  clip-path: polygon(12% 3%, 85% 3%, 85% 28%, 77% 30%, 66% 36%, 62% 43%, 30% 45%, 21% 39%, 12% 25%);
+}
+.dance-torso {
+  position: absolute; z-index: 1; top: 42%; left: 32%; width: 31%; height: 25%; border-radius: 10% 9% 14% 12%;
+  background: linear-gradient(93deg, #227c76 0 12%, #3e9d8c 13%, #ebaa07 19%, #ffd62f 32%, #ffca1c 77%, #279187 84%, #1b736f 100%);
+  box-shadow: inset -2px -3px #a9661d38;
+}
+.dance-limb {
+  position: absolute; display: block; transform-origin: 50% 10%; transition: transform .17s ease-out;
+  background: linear-gradient(100deg, #dc9306, #ffd63b 38%, #ffbf14 80%, #daa215);
+  box-shadow: inset 0 -1px #a6692580, inset 1px 2px #ffe46d;
+  border-radius: 17% 16% 15% 15%;
+}
+.dance-arm { z-index: 3; top: 44%; width: 12%; height: 30%; }
+.dance-arm::before, .dance-leg::before {
+  content: ""; position: absolute; top: 48%; left: 3%; right: 3%; border-top: 1px solid #a86d205e;
+}
+.dance-arm-left { left: 25%; transform: rotate(var(--left-arm, 14deg)); }
+.dance-arm-right { left: 59%; transform: rotate(var(--right-arm, -14deg)); }
+.dance-leg { top: 63%; width: 16%; height: 27%; }
+.dance-leg-left { left: 33%; transform: rotate(var(--left-leg, 4deg)); }
+.dance-leg-right { left: 49%; transform: rotate(var(--right-leg, -4deg)); }
+.dance-leg::after {
+  content: ""; position: absolute; bottom: -6%; left: -13%; width: 120%; height: 29%; border-radius: 22%;
+  background: linear-gradient(165deg, #ffe16b, #f9b611 66%, #dfa012); box-shadow: inset 0 -2px #ad74177d;
+}
+.dance-phone {
+  display: none; position: absolute; z-index: 4; bottom: -18%; right: 12%; width: 70%; height: 30%;
+  border-radius: 16%; border: 2px solid #1f2746; background: #5876e4; transform: rotate(55deg);
+}
+.dance-phone::after { content: ""; position: absolute; inset: 12% 53% 55% 12%; background: #16234a; border-radius: 50%; }
+.victory-avatar[data-phrase="cream"] { --left-arm: 153deg; --right-arm: -153deg; --left-leg: 13deg; --right-leg: -13deg; }
+.victory-avatar[data-phrase="cream"][data-beat="1"],
+.victory-avatar[data-phrase="cream"][data-beat="3"] { --left-arm: 111deg; --right-arm: -111deg; --dance-y: -7%; --left-leg: 23deg; --right-leg: -23deg; }
+.victory-avatar[data-phrase="cross"] { --left-arm: -63deg; --right-arm: 63deg; --left-leg: 25deg; --right-leg: -25deg; }
+.victory-avatar[data-phrase="cross"][data-beat="1"],
+.victory-avatar[data-phrase="cross"][data-beat="3"] { --left-arm: 70deg; --right-arm: -70deg; --left-leg: -19deg; --right-leg: 19deg; --dance-y: -5%; }
+.victory-avatar[data-phrase="veggie"] { --left-arm: 118deg; --right-arm: -34deg; --left-leg: 23deg; --right-leg: 35deg; --dance-x: -4%; --dance-tilt: -9deg; }
+.victory-avatar[data-phrase="veggie"][data-beat="1"],
+.victory-avatar[data-phrase="veggie"][data-beat="3"] { --left-arm: 34deg; --right-arm: -118deg; --left-leg: -35deg; --right-leg: -23deg; --dance-x: 4%; --dance-tilt: 9deg; }
+.victory-avatar[data-phrase="selfie"] { --left-arm: 24deg; --right-arm: -133deg; --dance-x: -2%; --dance-tilt: -7deg; }
+.victory-avatar[data-phrase="selfie"][data-beat="1"],
+.victory-avatar[data-phrase="selfie"][data-beat="3"] { --left-arm: 146deg; --right-arm: -118deg; --dance-x: 3%; --dance-tilt: 8deg; }
+.victory-avatar[data-phrase="selfie"] .dance-phone { display: block; }
 @media (prefers-reduced-motion: reduce) {
   #btn-replay-dance { display: none; }
 }

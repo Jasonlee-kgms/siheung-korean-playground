@@ -345,10 +345,7 @@ function triggerConfetti() {
 }
 
 function showView(viewElement) {
-  if (viewElement !== dom.viewResult) {
-    clearTimeout(victoryDanceTimer);
-    document.getElementById('victory-voice').pause();
-  }
+  if (viewElement !== dom.viewResult) stopVictoryDance();
   document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
   viewElement.classList.add('active');
   document.getElementById('game-status').hidden = viewElement === dom.viewHome || viewElement === dom.viewLeaderboard;
@@ -899,7 +896,7 @@ function initApp() {
 
 function resetGame() {
   state.gameAttempt++;
-  clearTimeout(victoryDanceTimer);
+  stopVictoryDance();
   state.scoreEntry = null;
   state.savingScore = false;
   state.speechSynth?.cancel();
@@ -1394,43 +1391,77 @@ function useHintChance() {
 // ==========================================
 // [11] 결과 및 랭킹
 // ==========================================
-let victoryDanceTimer;
+const victoryChoreography = [
+  ['l', 'L을 가져가!'],
+  ['cream', '크림치즈허니!'],
+  ['l', 'L을 가져가!'],
+  ['cross', '크리스크로스!'],
+  ['l', 'L을 가져가!'],
+  ['veggie', '야채!'],
+  ['l', 'L을 가져가!'],
+  ['selfie', '셀카!']
+];
+const victoryLSteps = ['hop', 'left', 'land', 'close', 'hop', 'right', 'land', 'close'];
+let victoryDanceFrame;
+let victoryPlayback = 0;
+
+function stopVictoryDance() {
+  victoryPlayback++;
+  cancelAnimationFrame(victoryDanceFrame);
+  document.getElementById('victory-voice').pause();
+}
 
 function playVictoryDance() {
-  clearTimeout(victoryDanceTimer);
+  stopVictoryDance();
+  const playback = victoryPlayback;
   const voice = document.getElementById('victory-voice');
+  const avatar = document.querySelector('.victory-avatar');
+  const lyric = document.getElementById('victory-lyric');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let previousStep = -1;
+  let previousReducedMotion;
+
+  avatar.dataset.frame = 'ready';
+  delete avatar.dataset.phrase;
+  lyric.textContent = victoryChoreography[0][1];
   state.speechSynth?.cancel();
   voice.currentTime = 0;
-  voice.play().catch(error => {
-    if (error.name !== 'AbortError' && dom.viewResult.classList.contains('active')) {
+
+  function followAudio() {
+    if (playback !== victoryPlayback || voice.paused) return;
+    // The source clip changes moves every 1.6 seconds. Use the audio clock even when it loops.
+    const step = Math.min(63, Math.floor(voice.currentTime * 5));
+    if (step !== previousStep || reducedMotion.matches !== previousReducedMotion) {
+      previousStep = step;
+      previousReducedMotion = reducedMotion.matches;
+      const [phrase, text] = victoryChoreography[Math.floor(step / 8)];
+      if (lyric.textContent !== text) lyric.textContent = text;
+      if (previousReducedMotion) {
+        avatar.dataset.frame = 'ready';
+        delete avatar.dataset.phrase;
+      } else {
+        const phraseStep = step % 8;
+        avatar.dataset.frame = phrase === 'l' ? victoryLSteps[phraseStep] : 'rig';
+        avatar.dataset.beat = Math.floor(phraseStep / 2);
+        avatar.dataset.phrase = phrase;
+      }
+    }
+    victoryDanceFrame = requestAnimationFrame(followAudio);
+  }
+
+  voice.play().then(() => {
+    if (playback === victoryPlayback) followAudio();
+  }).catch(error => {
+    if (playback === victoryPlayback && error.name !== 'AbortError') {
       speakAI('엘을 가져가, 크림치즈허니! 엘을 가져가, 크리스크로스! 엘을 가져가, 야채! 엘을 가져가, 셀카!',
         null, { rate: 1.15, pitch: 1.35 });
     }
   });
-  const avatar = document.querySelector('.victory-avatar');
-  avatar.dataset.frame = 'ready';
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const leftStep = [['hop', 75], ['left', 180], ['land', 85], ['close', 45]];
-  const rightStep = [['hop', 75], ['right', 180], ['land', 85], ['close', 45]];
-  const phrase = [...leftStep, ...rightStep, ...leftStep, ...rightStep];
-  const frames = [
-    ['ready', 140], ['close', 90],
-    ...phrase, ...phrase, ...phrase, ...phrase,
-    ['land', 130], ['close', 140], ['ready', 0]
-  ];
-  let index = 0;
-  function nextFrame() {
-    const [frame, duration] = frames[index++];
-    avatar.dataset.frame = frame;
-    if (duration) victoryDanceTimer = setTimeout(nextFrame, duration);
-  }
-  nextFrame();
 }
 
 function finishGame(isWin, message = '', bonusLabel = '완주 보너스') {
   stopHardwareMicMeter();
-  if (isWin) document.getElementById('victory-voice').pause();
+  if (isWin) stopVictoryDance();
   document.getElementById('ai-victory').hidden = isWin;
   if (isWin) {
     sfx.fanfare();
