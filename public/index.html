@@ -115,7 +115,7 @@
       <section id="view-stage2" class="view-section" aria-labelledby="battle-heading">
         <div class="screen-heading">
           <h2 id="battle-heading" tabindex="-1">AI와 끝말잇기</h2>
-          <p>뽀랭이와 다섯 번 주고받아 봐. 시간이 지나면 뽀랭이가 단어를 도와줘.</p>
+          <p>뽀랭이와 다섯 번 주고받아 봐. 틀리거나 시간이 다 되면 한 번 더 도전할 수 있어.</p>
         </div>
         <div class="battle-arena">
           <div class="ai-character-card">
@@ -123,7 +123,7 @@
             <div><strong>뽀랭이</strong><p id="ai-speech-text" class="ai-speech-bubble" aria-live="polite"></p></div>
           </div>
           <div class="battle-play">
-            <div class="battle-status-row"><b id="battle-turn-text">1 / 5 차례</b><span id="battle-time-text">10초 · 대기 중</span></div>
+            <div class="battle-status-row"><b id="battle-turn-text">1 / 5 차례</b><span id="battle-misses">실패 0 / 2</span><span id="battle-time-text">10초 · 대기 중</span></div>
             <div class="timer-container" aria-hidden="true"><div id="battle-timer-bar" class="timer-bar"></div></div>
             <div class="target-char-box">
               <p id="word-rule">이 글자로 시작!</p>
@@ -150,7 +150,10 @@
       </section>
 
       <section id="view-result" class="view-section" aria-labelledby="result-heading">
-        <div class="screen-heading"><h2 id="result-heading" tabindex="-1">도전 완료!</h2></div>
+        <div class="screen-heading">
+          <h2 id="result-heading" tabindex="-1">도전 완료!</h2>
+          <p id="result-message" hidden></p>
+        </div>
         <div id="ai-victory" class="ai-victory" hidden>
           <audio id="victory-voice" src="pporaengi-l-voice.mp3" preload="auto" loop></audio>
           <div class="victory-avatar" role="img" aria-label="L 춤을 추는 뽀랭이">
@@ -169,7 +172,7 @@
             <dl class="score-breakdown">
               <div><dt>글 찾기</dt><dd id="res-score-s1"></dd></div>
               <div><dt>끝말잇기</dt><dd id="res-score-s2"></dd></div>
-              <div id="win-bonus" hidden><dt>완주 보너스</dt><dd>50점</dd></div>
+              <div id="win-bonus" hidden><dt id="win-bonus-label">완주 보너스</dt><dd>50점</dd></div>
             </dl>
           </div>
           <div class="nickname-input-box">
@@ -225,6 +228,6 @@
   <script src="rankings.js"></script>
   <script src="words.js?v=5-levels"></script>
   <script src="quiz-levels.js?v=6"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

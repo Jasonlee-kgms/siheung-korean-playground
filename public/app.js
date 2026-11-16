@@ -105,7 +105,7 @@ const state = {
   battleTurn: 1,
   turnOpen: false,
   maxTurns: 5,
-  assistedTurns: 0,
+  battleMisses: 0,
   targetChar: "시",
   usedWords: new Set(),
   bTimer: null,
@@ -597,6 +597,10 @@ function showSpeechChoices(result) {
     if (candidates.length === 5) break;
     if (canContinue(word, steps, false)) candidates.push(word);
   }
+  for (const word of recognized) {
+    if (candidates.length === 5) break;
+    if (!candidates.includes(word)) candidates.push(word);
+  }
   clearSpeechChoices();
   dom.speechLiveText.textContent = `이렇게 들렸어 · ${recognized[0]}`;
   dom.micStatusText.textContent = candidates.length
@@ -911,7 +915,7 @@ function resetGame() {
   state.stage2Score = 0;
   state.currentQIndex = 0;
   state.battleTurn = 1;
-  state.assistedTurns = 0;
+  state.battleMisses = 0;
   state.usedWords.clear();
   state.chanceUsed = false;
   dom.totalScoreDisplay.textContent = "0";
@@ -1117,7 +1121,8 @@ function startStage2() {
   showView(dom.viewStage2);
   
   state.battleTurn = 1;
-  state.assistedTurns = 0;
+  state.battleMisses = 0;
+  document.getElementById('battle-misses').textContent = '실패 0 / 2';
   state.usedWords.clear();
   setCharacterMood('idle');
   dom.bTurnDisplay.textContent = '1 / 5 차례';
@@ -1196,7 +1201,7 @@ function startBattleTimer() {
     dom.bTimeDisplay.textContent = `${state.bTimeLeft}초 남음`;
     if (dom.textModal.open) dom.textModalTime.textContent = dom.bTimeDisplay.textContent;
     if (state.bTimeLeft > 0 && state.bTimeLeft <= 3) sfx.tick();
-    if (state.bTimeLeft === 0) handleBattleTimeout();
+    if (state.bTimeLeft === 0) registerBattleMiss('시간이 다 됐어.');
   }, 200);
 }
 
@@ -1220,25 +1225,37 @@ function showPlayerWordError(message) {
   if (dom.textModal.open) dom.textModalFeedback.textContent = message;
 }
 
+function registerBattleMiss(message) {
+  if (!state.turnOpen) return;
+  closePlayerTurn();
+  state.battleMisses++;
+  document.getElementById('battle-misses').textContent = `실패 ${state.battleMisses} / 2`;
+  if (state.battleMisses === 2) {
+    finishGame(false, `${message} 두 번째 실패로 끝말잇기가 끝났어.`);
+    return;
+  }
+  sfx.wrong();
+  preparePlayerTurn(state.targetChar);
+  dom.micStatusText.textContent = `${message} 같은 글자로 한 번 더 도전해 봐!`;
+}
+
 function processPlayerWord(rawWord) {
   if (!state.turnOpen) return;
   const word = rawWord.replace(/[^가-힣]/g, '');
   if (word.length < state.level.minLength) {
-    showPlayerWordError(`${state.level.minLength}글자 이상의 한글 단어를 말하거나 입력해 줘.`);
+    registerBattleMiss(`${state.level.minLength}글자 이상의 단어를 써야 해.`);
     return;
   }
 
   const firstChar = word[0];
   const validVariants = getInitialVariants(state.targetChar);
   if (!validVariants.includes(firstChar)) {
-    sfx.wrong();
-    showPlayerWordError(`‘${validVariants.join('’ 또는 ‘')}’로 시작해 줘.`);
+    registerBattleMiss(`‘${validVariants.join('’ 또는 ‘')}’로 시작해야 해.`);
     return;
   }
 
   if (state.usedWords.has(word)) {
-    sfx.wrong();
-    showPlayerWordError(`‘${word}’는 이미 썼어. 다른 단어를 골라 줘.`);
+    registerBattleMiss(`‘${word}’는 이미 쓴 단어야.`);
     return;
   }
 
@@ -1336,44 +1353,25 @@ async function executeAITurn(playerLastChar, playerWord) {
   }
 
   if (!candidate) {
-    candidate = remaining > 0 ? chooseBattleStarter(remaining) : null;
-    replyText = candidate
-      ? `‘${playerWord}’ 다음은 내가 못 잇겠어. 다음 차례는 새 단어 ‘${candidate}’로 시작할게!`
-      : `‘${playerWord}’ 다음은 내가 못 잇겠어.`;
+    finishGame(true, `뽀랭이가 ‘${playerWord}’ 다음을 잇지 못했어. 네가 이겼어!`, '승리 보너스');
+    return;
   }
 
-  if (candidate) state.usedWords.add(candidate);
+  state.usedWords.add(candidate);
   setCharacterMood(mood);
   dom.aiSpeechText.textContent = `"${replyText}"`;
   
   setTimeout(() => {
     if (attempt !== state.gameAttempt) return;
     speakAI(replyText, () => {
-      if (state.battleTurn === state.maxTurns || !candidate) {
-        finishGame(state.assistedTurns === 0);
+      if (state.battleTurn === state.maxTurns) {
+        finishGame(true);
         return;
       }
       state.battleTurn++;
       preparePlayerTurn(candidate.slice(-1));
     });
   }, 300);
-}
-
-function handleBattleTimeout() {
-  const [word] = shuffled(findPlayablePlayerWords());
-  closePlayerTurn();
-  if (!word) {
-    finishGame(false);
-    return;
-  }
-  state.assistedTurns++;
-  state.usedWords.add(word);
-  dom.micStatusText.textContent = '시간이 지나 이번 차례는 0점이에요.';
-  sfx.wrong();
-  setCharacterMood('idle');
-  const timeoutMsg = `시간이 다 됐어. 이번에는 ‘${word}’로 이어 볼게!`;
-  dom.aiSpeechText.textContent = `"${timeoutMsg}"`;
-  speakAI(timeoutMsg, () => executeAITurn(word.slice(-1), word));
 }
 
 function useHintChance() {
@@ -1429,7 +1427,7 @@ function playVictoryDance() {
   nextFrame();
 }
 
-function finishGame(isWin) {
+function finishGame(isWin, message = '', bonusLabel = '완주 보너스') {
   stopHardwareMicMeter();
   if (isWin) document.getElementById('victory-voice').pause();
   document.getElementById('ai-victory').hidden = isWin;
@@ -1441,7 +1439,11 @@ function finishGame(isWin) {
   }
   
   dom.stageBadge.textContent = "내 기록";
+  const resultMessage = document.getElementById('result-message');
+  resultMessage.textContent = message;
+  resultMessage.hidden = !message;
   document.getElementById('win-bonus').hidden = !isWin;
+  document.getElementById('win-bonus-label').textContent = bonusLabel;
   dom.nicknameInput.value = '';
   dom.nicknameInput.disabled = false;
   dom.btnSaveRank.disabled = false;
