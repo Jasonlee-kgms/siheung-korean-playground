@@ -582,9 +582,8 @@ function showSpeechChoices(result) {
   }
   const starts = getInitialVariants(state.targetChar);
   const steps = 2 * (state.maxTurns - state.battleTurn) + 1;
-  const alternatives = recognized.filter(word => word.length >= state.level.minLength && starts.includes(word[0])
-    && !state.usedWords.has(word) && !WORD_DICTIONARY.killerEndChars.includes(word.slice(-1))
-    && canContinue(word, steps, false));
+  const alternatives = recognized.filter(word => word.length >= state.level.minLength
+    && starts.includes(word[0]) && !state.usedWords.has(word));
   const similar = availableWords(state.targetChar, state.usedWords, state.level.minLength)
     .filter(word => !alternatives.includes(word))
     .map(word => ({
@@ -1095,9 +1094,22 @@ function canContinue(word, steps, nextIsPlayer) {
 }
 
 function findPlayablePlayerWords() {
+  const words = availableWords(state.targetChar, state.usedWords, state.level.minLength);
   const stepsAfterPlayer = 2 * (state.maxTurns - state.battleTurn) + 1;
-  return availableWords(state.targetChar, state.usedWords, state.level.minLength)
-    .filter(word => canContinue(word, stepsAfterPlayer, false));
+  const wordsWithLongChain = words.filter(word => canContinue(word, stepsAfterPlayer, false));
+  return wordsWithLongChain.length ? wordsWithLongChain : words;
+}
+
+function chooseBattleStarter(steps) {
+  const { id, starters } = state.level;
+  const unused = shuffled(starters).filter(word => !state.usedWords.has(word));
+  const ordered = unused.filter(word => word !== previousStarter.get(id))
+    .concat(unused.filter(word => word === previousStarter.get(id)));
+  const word = ordered.find(word => canContinue(word, steps, true))
+    || ordered.find(word => canContinue(word, 1, true))
+    || Array.from(ALL_WORDS).find(word => !state.usedWords.has(word) && canContinue(word, 1, true));
+  if (word) previousStarter.set(id, word);
+  return word;
 }
 
 function startStage2() {
@@ -1116,11 +1128,7 @@ function startStage2() {
   dom.micStatusText.textContent = '뽀랭이가 먼저 말해요.';
   dom.speechLiveText.textContent = '';
 
-  const { id, starters } = state.level;
-  const eligible = shuffled(starters).filter(word => word !== previousStarter.get(id));
-  const startWord = eligible.find(word => canContinue(word, state.maxTurns * 2, true))
-    || starters.find(word => canContinue(word, state.maxTurns * 2, true));
-  previousStarter.set(id, startWord);
+  const startWord = chooseBattleStarter(state.maxTurns * 2);
   state.usedWords.add(startWord);
 
   const introMsg = `반가워. 난 뽀랭이야. 첫 단어는 '${startWord}'로 시작한다.`;
@@ -1234,25 +1242,6 @@ function processPlayerWord(rawWord) {
     return;
   }
 
-  // 한방 단어 방어
-  const lastChar = word.slice(-1);
-  if (WORD_DICTIONARY.killerEndChars.includes(lastChar)) {
-    sfx.wrong();
-    setCharacterMood('nervous');
-    const defenseMsg = `앗! '${word}'의 끝 글자 '${lastChar}'(은)는 너무 강력한 반칙 마법이야. 다른 단어로 다시 말해줘.`;
-    dom.aiSpeechText.textContent = `"${defenseMsg}"`;
-    if (dom.textModal.open) {
-      showPlayerWordError(`‘${lastChar}’로 끝나는 단어는 사용할 수 없어. 다른 단어를 골라 줘.`);
-    } else {
-      speakAI(defenseMsg);
-    }
-    return;
-  }
-  if (!canContinue(word, 2 * (state.maxTurns - state.battleTurn) + 1, false)) {
-    showPlayerWordError(`게임 사전에서 ‘${lastChar}’ 다음을 충분히 이을 수 없어요. 다른 단어를 골라 줘.`);
-    return;
-  }
-
   closePlayerTurn();
   dom.micStatusText.textContent = "뽀랭이 차례예요.";
   state.usedWords.add(word);
@@ -1298,49 +1287,69 @@ async function executeAITurn(playerLastChar, playerWord) {
   const attempt = state.gameAttempt;
   const remaining = 2 * (state.maxTurns - state.battleTurn);
   const difficulty = GAME_LEVELS.indexOf(state.level);
-  const replyObj = difficulty < 3 || state.geminiConfigured === false ? null
-    : await requestGemini({ action: 'word', word: playerWord, mode: state.level.group }, 3800);
-  if (attempt !== state.gameAttempt) return;
   const variants = getInitialVariants(playerLastChar);
-  const canReply = word => typeof word === 'string' && /^[가-힣]{2,32}$/.test(word)
+  const canReply = (word, steps) => typeof word === 'string' && /^[가-힣]{2,32}$/.test(word)
     && variants.includes(word[0]) && !state.usedWords.has(word)
     && !WORD_DICTIONARY.killerEndChars.includes(word.slice(-1))
-    && canContinue(word, remaining, true);
+    && canContinue(word, steps, true);
+  const localWords = availableWords(playerLastChar, state.usedWords);
+  const longChainReplies = localWords.filter(word => canReply(word, remaining));
+  const tryGemini = !state.forceLocal && state.geminiConfigured !== false
+    && (difficulty >= 3 || !longChainReplies.length);
+  const replyObj = tryGemini
+    ? await requestGemini({ action: 'word', word: playerWord, mode: state.level.group }, 3800)
+    : null;
+  if (attempt !== state.gameAttempt) return;
 
   let candidate = null;
   let replyText = "";
   let mood = "idle";
+  const hasGeminiReaction = typeof replyObj?.reaction === 'string' && replyObj.reaction.includes(replyObj.word);
 
-  if (canReply(replyObj?.word) && typeof replyObj.reaction === 'string' && replyObj.reaction.includes(replyObj.word)) {
+  if (hasGeminiReaction && canReply(replyObj.word, remaining)) {
     candidate = replyObj.word;
     replyText = replyObj.reaction;
     mood = replyObj.mood || "idle";
   }
 
-  if (!candidate) {
+  if (!candidate && longChainReplies.length) {
     const options = word => availableWords(word.slice(-1), new Set([...state.usedWords, word]), state.level.minLength).length;
-    const pool = shuffled(availableWords(playerLastChar, state.usedWords).filter(canReply))
+    const pool = shuffled(longChainReplies)
       .map(word => ({ word, options: options(word) }))
       .sort((a, b) => b.options - a.options || a.word.length - b.word.length);
     const first = Math.floor(pool.length * difficulty / GAME_LEVELS.length);
     const last = Math.max(first + 1, Math.ceil(pool.length * (difficulty + 1) / GAME_LEVELS.length));
-    candidate = shuffled(pool.slice(first, last))[0]?.word;
-    if (!candidate) {
-      finishGame(state.assistedTurns === 0);
-      return;
-    }
+    candidate = shuffled(pool.slice(first, last))[0].word;
     replyText = `내 차례다. '${candidate}'!`;
-    mood = "idle";
   }
 
-  state.usedWords.add(candidate);
+  if (!candidate) {
+    const nextSteps = Math.min(1, remaining);
+    if (hasGeminiReaction && canReply(replyObj.word, nextSteps)) {
+      candidate = replyObj.word;
+      replyText = replyObj.reaction;
+      mood = replyObj.mood || 'idle';
+    } else {
+      candidate = shuffled(localWords).find(word => canReply(word, nextSteps));
+      if (candidate) replyText = `내 차례다. '${candidate}'!`;
+    }
+  }
+
+  if (!candidate) {
+    candidate = remaining > 0 ? chooseBattleStarter(remaining) : null;
+    replyText = candidate
+      ? `‘${playerWord}’ 다음은 내가 못 잇겠어. 다음 차례는 새 단어 ‘${candidate}’로 시작할게!`
+      : `‘${playerWord}’ 다음은 내가 못 잇겠어.`;
+  }
+
+  if (candidate) state.usedWords.add(candidate);
   setCharacterMood(mood);
   dom.aiSpeechText.textContent = `"${replyText}"`;
   
   setTimeout(() => {
     if (attempt !== state.gameAttempt) return;
     speakAI(replyText, () => {
-      if (state.battleTurn === state.maxTurns) {
+      if (state.battleTurn === state.maxTurns || !candidate) {
         finishGame(state.assistedTurns === 0);
         return;
       }
@@ -1422,6 +1431,7 @@ function playVictoryDance() {
 
 function finishGame(isWin) {
   stopHardwareMicMeter();
+  if (isWin) document.getElementById('victory-voice').pause();
   document.getElementById('ai-victory').hidden = isWin;
   if (isWin) {
     sfx.fanfare();
