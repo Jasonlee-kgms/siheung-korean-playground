@@ -169,6 +169,7 @@ const dom = {
   qFeedback: document.getElementById('quiz-feedback'),
   qFeedbackTitle: document.getElementById('feedback-title'),
   qFeedbackDesc: document.getElementById('feedback-desc'),
+  qSource: document.getElementById('quiz-source'),
   btnNextQuiz: document.getElementById('btn-next-quiz'),
   
   // Stage 2
@@ -199,6 +200,9 @@ const dom = {
 
   textModal: document.getElementById('text-input-modal'),
   textModalInput: document.getElementById('text-modal-input'),
+  textModalTime: document.getElementById('text-modal-time'),
+  textModalRule: document.getElementById('text-modal-rule'),
+  textModalFeedback: document.getElementById('text-modal-feedback'),
   btnSubmitText: document.getElementById('btn-submit-text'),
   btnCloseModal: document.getElementById('btn-close-modal'),
   
@@ -254,7 +258,7 @@ if (window.speechSynthesis) {
   populateVoiceList();
 }
 
-function speakAI(text, onEnd = null) {
+function speakAI(text, onEnd = null, { rate = 1, pitch = 1 } = {}) {
   if (!state.speechSynth) {
     if (onEnd) onEnd();
     return;
@@ -270,8 +274,8 @@ function speakAI(text, onEnd = null) {
     if (matched) utter.voice = matched;
   }
 
-  utter.rate = 1.0;
-  utter.pitch = 1.0;
+  utter.rate = rate;
+  utter.pitch = pitch;
 
   if (onEnd) {
     const attempt = state.gameAttempt;
@@ -341,7 +345,10 @@ function triggerConfetti() {
 }
 
 function showView(viewElement) {
-  if (viewElement !== dom.viewResult) clearTimeout(victoryDanceTimer);
+  if (viewElement !== dom.viewResult) {
+    clearTimeout(victoryDanceTimer);
+    document.getElementById('victory-voice').pause();
+  }
   document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
   viewElement.classList.add('active');
   document.getElementById('game-status').hidden = viewElement === dom.viewHome || viewElement === dom.viewLeaderboard;
@@ -574,18 +581,23 @@ function showSpeechChoices(result) {
     return;
   }
   const starts = getInitialVariants(state.targetChar);
-  const playable = word => word.length >= state.level.minLength && starts.includes(word[0])
+  const steps = 2 * (state.maxTurns - state.battleTurn) + 1;
+  const alternatives = recognized.filter(word => word.length >= state.level.minLength && starts.includes(word[0])
     && !state.usedWords.has(word) && !WORD_DICTIONARY.killerEndChars.includes(word.slice(-1))
-    && canContinue(word, 2 * (state.maxTurns - state.battleTurn) + 1, false);
-  const alternatives = recognized.filter(playable);
-  const similar = Array.from(ALL_WORDS).filter(word => playable(word) && !alternatives.includes(word))
+    && canContinue(word, steps, false));
+  const similar = availableWords(state.targetChar, state.usedWords, state.level.minLength)
+    .filter(word => !alternatives.includes(word))
     .map(word => ({
       word,
       distance: Math.min(...recognized.map((heard, index) => koreanSoundDistance(heard, word) + index * .05))
     }))
     .filter(({ distance }) => distance <= .85)
     .sort((left, right) => left.distance - right.distance);
-  const candidates = [...alternatives, ...similar.map(({ word }) => word)].slice(0, 5);
+  const candidates = alternatives.slice(0, 5);
+  for (const { word } of similar) {
+    if (candidates.length === 5) break;
+    if (canContinue(word, steps, false)) candidates.push(word);
+  }
   clearSpeechChoices();
   dom.speechLiveText.textContent = `이렇게 들렸어 · ${recognized[0]}`;
   dom.micStatusText.textContent = candidates.length
@@ -640,7 +652,7 @@ function setupSpeechRecognition() {
   };
 
   rec.onresult = (e) => {
-    if (!state.turnOpen) return;
+    if (!state.turnOpen || dom.textModal.open) return;
     const result = e.results[e.results.length - 1];
     if (result.isFinal) {
       showSpeechChoices(result);
@@ -650,7 +662,7 @@ function setupSpeechRecognition() {
   };
 
   rec.onerror = (e) => {
-    if (!state.turnOpen || e.error === 'aborted') return;
+    if (!state.turnOpen || dom.textModal.open || e.error === 'aborted') return;
     state.microphoneStarting = false;
     state.isListening = false;
     dom.btnMic.classList.remove('listening');
@@ -836,26 +848,39 @@ function initApp() {
   // Stage 2
   setupSpeechRecognition();
   dom.btnChance.addEventListener('click', useHintChance);
+  let composingWord = false;
+  dom.textModalInput.addEventListener('compositionstart', () => { composingWord = true; });
+  dom.textModalInput.addEventListener('compositionend', () => { composingWord = false; });
   dom.btnTextFallback.addEventListener('click', () => {
-    if (!state.turnOpen) return;
+    if (!state.turnOpen || dom.textModal.open) return;
     if (state.microphoneStarting || state.isListening) {
       state.microphoneStarting = false;
       try { state.recognition.abort(); } catch {}
     }
-    dom.textModalInput.value = "";
+    composingWord = false;
+    dom.textModalInput.value = '';
+    dom.textModalFeedback.textContent = '';
+    dom.textModalRule.textContent = `‘${getInitialVariants(state.targetChar).join('’ 또는 ‘')}’로 시작하는 ${state.level.minLength}글자 이상 단어`;
     dom.textModal.showModal();
+    dom.textModalInput.focus();
     startBattleTimer();
+    dom.textModalTime.textContent = `${state.bTimeLeft}초 남음`;
   });
   dom.btnCloseModal.addEventListener('click', () => dom.textModal.close());
   dom.btnSubmitText.addEventListener('click', () => {
-    const val = dom.textModalInput.value.trim();
-    if (val) {
-      dom.textModal.close();
+    if (!state.turnOpen || !dom.textModal.open || composingWord) return;
+    const val = dom.textModalInput.value.normalize('NFC').trim();
+    if (!/^[가-힣]+$/.test(val)) {
+      showPlayerWordError('한글 단어를 써 줘. 한/영 키로 입력 언어를 바꿀 수 있어.');
+    } else {
       processPlayerWord(val);
     }
+    if (dom.textModal.open) dom.textModalInput.focus();
   });
   dom.textModalInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) dom.btnSubmitText.click();
+    if (e.key !== 'Enter' || e.isComposing || composingWord || e.keyCode === 229) return;
+    e.preventDefault();
+    dom.btnSubmitText.click();
   });
 
   // 랭킹 저장 & 재시작
@@ -912,10 +937,10 @@ function startGame() {
   const recent = previousQuiz.get(id) || [];
   const selected = shuffled(QUIZ_LEVELS[id].filter(item => !recent.includes(item))).slice(0, 2);
   previousQuiz.set(id, selected);
-  state.stage1Questions = selected.map(([title, prompt, first, second, answer, explanation]) => {
+  state.stage1Questions = selected.map(({ title, human, ai, author, work, source }) => {
     const swap = Math.random() < 0.5;
-    return { title, prompt, textA: swap ? second : first, textB: swap ? first : second,
-      correctChoice: answer === Number(swap) ? 'A' : 'B', explanation };
+    return { title, textA: swap ? ai : human, textB: swap ? human : ai,
+      correctChoice: swap ? 'A' : 'B', author, work, source };
   });
   startStage1();
 }
@@ -924,7 +949,7 @@ function startGame() {
 // [Stage 1] 글 판별 퀴즈
 // ==========================================
 function startStage1() {
-  dom.stageBadge.textContent = `2 / 3 · 글 비교 퀴즈 (${state.level.label})`;
+  dom.stageBadge.textContent = `2 / 3 · AI가 쓴 글 찾기 (${state.level.label})`;
   showView(dom.viewStage1);
   loadQuizQuestion(0);
 }
@@ -935,7 +960,6 @@ function loadQuizQuestion(index) {
   
   dom.qNumber.textContent = `${index + 1} / ${state.stage1Questions.length} 문제`;
   dom.qIdiomTag.textContent = q.title;
-  document.getElementById('quiz-question').textContent = q.prompt;
   dom.qTextA.textContent = q.textA;
   dom.qTextB.textContent = q.textB;
   
@@ -943,6 +967,8 @@ function loadQuizQuestion(index) {
   dom.qCardB.classList.remove('selected-correct', 'selected-wrong');
   setQuizChoices(true);
   dom.qFeedback.classList.remove('show');
+  dom.qSource.removeAttribute('href');
+  dom.qSource.textContent = '';
   dom.btnNextQuiz.style.display = 'none';
 
   clearInterval(state.qTimer);
@@ -951,10 +977,12 @@ function loadQuizQuestion(index) {
   
   const startTime = Date.now();
   state.qTimer = setInterval(() => {
-    state.qTimeLeft = Math.max(0, 35 - Math.floor((Date.now() - startTime) / 1000));
-    dom.qTimerBar.style.width = `${(state.qTimeLeft / 35) * 100}%`;
-    if (state.qTimeLeft <= 5) sfx.tick();
-    if (state.qTimeLeft <= 0) {
+    const secondsLeft = Math.max(0, 35 - Math.floor((Date.now() - startTime) / 1000));
+    if (secondsLeft === state.qTimeLeft) return;
+    state.qTimeLeft = secondsLeft;
+    dom.qTimerBar.style.width = `${(secondsLeft / 35) * 100}%`;
+    if (secondsLeft > 0 && secondsLeft <= 5) sfx.tick();
+    if (secondsLeft === 0) {
       clearInterval(state.qTimer);
       handleQuizTimeout();
     }
@@ -987,7 +1015,7 @@ function handleQuizChoice(choice) {
     sfx.wrong();
     selectedCard.classList.add('selected-wrong');
     correctCard.classList.add('selected-correct');
-    dom.qFeedbackTitle.textContent = `정답은 ‘${q.correctChoice === 'A' ? '가' : '나'}’ 글이야.`;
+    dom.qFeedbackTitle.textContent = '다음 문제에도 도전해 봐!';
   }
 
   state.stage1Score += earned;
@@ -1004,7 +1032,10 @@ function setQuizChoices(enabled) {
 }
 
 function showQuizFeedback(question) {
-  dom.qFeedbackDesc.textContent = question.explanation;
+  const aiIsA = question.correctChoice === 'A';
+  dom.qFeedbackDesc.textContent = `‘${aiIsA ? '가' : '나'}’는 이 퀴즈를 위해 AI가 쓴 글이야. ‘${aiIsA ? '나' : '가'}’는 사람이 쓴 작품의 일부야.`;
+  dom.qSource.textContent = `${question.author} 〈${question.work}〉 원문 보기`;
+  dom.qSource.href = question.source;
   dom.qFeedback.classList.add('show');
   dom.btnNextQuiz.style.display = 'block';
   dom.btnNextQuiz.textContent = state.currentQIndex === 0 ? "다음 문제 →" : "끝말잇기 시작 →";
@@ -1017,7 +1048,7 @@ function handleQuizTimeout() {
   const correctCard = (q.correctChoice === 'A') ? dom.qCardA : dom.qCardB;
   correctCard.classList.add('selected-correct');
 
-  dom.qFeedbackTitle.textContent = `시간이 다 됐어. 정답은 ‘${q.correctChoice === 'A' ? '가' : '나'}’ 글이야.`;
+  dom.qFeedbackTitle.textContent = '시간이 다 됐어.';
   showQuizFeedback(q);
 }
 
@@ -1044,11 +1075,17 @@ function availableWords(lastChar, used, minLength = 2) {
 
 function hasChain(lastChar, steps, used, isPlayer, minLength) {
   if (steps === 0) return true;
-  for (const word of availableWords(lastChar, used, isPlayer ? minLength : 2)) {
-    used.add(word);
-    const works = hasChain(word.slice(-1), steps - 1, used, !isPlayer, minLength);
-    used.delete(word);
-    if (works) return true;
+  for (const letter of getInitialVariants(lastChar)) {
+    const words = battleWords.get(letter);
+    if (!words) continue;
+    for (const word of words) {
+      if ((isPlayer && word.length < minLength) || used.has(word)) continue;
+      if (steps === 1) return true;
+      used.add(word);
+      const works = hasChain(word.slice(-1), steps - 1, used, !isPlayer, minLength);
+      used.delete(word);
+      if (works) return true;
+    }
   }
   return false;
 }
@@ -1111,7 +1148,7 @@ function preparePlayerTurn(lastChar) {
   dom.speechLiveText.textContent = "";
   dom.btnMic.classList.remove('listening');
   dom.micStatusText.textContent = state.recognition
-    ? '마이크로 말하기를 누르면 10초가 시작돼요.'
+    ? '마이크 또는 키보드로 입력을 누르면 10초가 시작돼요.'
     : '키보드로 입력을 누르면 10초가 시작돼요.';
   dom.btnMic.disabled = !state.recognition;
   dom.btnTextFallback.disabled = false;
@@ -1146,9 +1183,11 @@ function startBattleTimer() {
   state.bTimer = setInterval(() => {
     const previous = state.bTimeLeft;
     state.bTimeLeft = Math.max(0, Math.min(10, 10 - Math.floor((battleElapsedTime() - state.speechChoiceExtraMs) / 1000)));
+    if (state.bTimeLeft === previous) return;
     dom.bTimerBar.style.width = `${(state.bTimeLeft / 10) * 100}%`;
     dom.bTimeDisplay.textContent = `${state.bTimeLeft}초 남음`;
-    if (state.bTimeLeft !== previous && state.bTimeLeft <= 3) sfx.tick();
+    if (dom.textModal.open) dom.textModalTime.textContent = dom.bTimeDisplay.textContent;
+    if (state.bTimeLeft > 0 && state.bTimeLeft <= 3) sfx.tick();
     if (state.bTimeLeft === 0) handleBattleTimeout();
   }, 200);
 }
@@ -1168,11 +1207,16 @@ function closePlayerTurn() {
   clearSpeechChoices();
 }
 
-async function processPlayerWord(rawWord) {
+function showPlayerWordError(message) {
+  dom.micStatusText.textContent = message;
+  if (dom.textModal.open) dom.textModalFeedback.textContent = message;
+}
+
+function processPlayerWord(rawWord) {
   if (!state.turnOpen) return;
   const word = rawWord.replace(/[^가-힣]/g, '');
   if (word.length < state.level.minLength) {
-    dom.micStatusText.textContent = `${state.level.minLength}글자 이상의 한글 단어를 말하거나 입력해 줘.`;
+    showPlayerWordError(`${state.level.minLength}글자 이상의 한글 단어를 말하거나 입력해 줘.`);
     return;
   }
 
@@ -1180,13 +1224,13 @@ async function processPlayerWord(rawWord) {
   const validVariants = getInitialVariants(state.targetChar);
   if (!validVariants.includes(firstChar)) {
     sfx.wrong();
-    dom.micStatusText.textContent = `‘${validVariants.join('’ 또는 ‘')}’로 시작해 줘.`;
+    showPlayerWordError(`‘${validVariants.join('’ 또는 ‘')}’로 시작해 줘.`);
     return;
   }
 
   if (state.usedWords.has(word)) {
     sfx.wrong();
-    dom.micStatusText.textContent = `‘${word}’는 이미 썼어. 다른 단어를 골라 줘.`;
+    showPlayerWordError(`‘${word}’는 이미 썼어. 다른 단어를 골라 줘.`);
     return;
   }
 
@@ -1197,11 +1241,15 @@ async function processPlayerWord(rawWord) {
     setCharacterMood('nervous');
     const defenseMsg = `앗! '${word}'의 끝 글자 '${lastChar}'(은)는 너무 강력한 반칙 마법이야. 다른 단어로 다시 말해줘.`;
     dom.aiSpeechText.textContent = `"${defenseMsg}"`;
-    speakAI(defenseMsg);
+    if (dom.textModal.open) {
+      showPlayerWordError(`‘${lastChar}’로 끝나는 단어는 사용할 수 없어. 다른 단어를 골라 줘.`);
+    } else {
+      speakAI(defenseMsg);
+    }
     return;
   }
   if (!canContinue(word, 2 * (state.maxTurns - state.battleTurn) + 1, false)) {
-    dom.micStatusText.textContent = `게임 사전에서 ‘${lastChar}’ 다음을 충분히 이을 수 없어요. 다른 단어를 골라 줘.`;
+    showPlayerWordError(`게임 사전에서 ‘${lastChar}’ 다음을 충분히 이을 수 없어요. 다른 단어를 골라 줘.`);
     return;
   }
 
@@ -1270,12 +1318,13 @@ async function executeAITurn(playerLastChar, playerWord) {
   }
 
   if (!candidate) {
-    const pool = shuffled(availableWords(playerLastChar, state.usedWords).filter(canReply));
     const options = word => availableWords(word.slice(-1), new Set([...state.usedWords, word]), state.level.minLength).length;
-    pool.sort((a, b) => options(b) - options(a) || a.length - b.length);
+    const pool = shuffled(availableWords(playerLastChar, state.usedWords).filter(canReply))
+      .map(word => ({ word, options: options(word) }))
+      .sort((a, b) => b.options - a.options || a.word.length - b.word.length);
     const first = Math.floor(pool.length * difficulty / GAME_LEVELS.length);
     const last = Math.max(first + 1, Math.ceil(pool.length * (difficulty + 1) / GAME_LEVELS.length));
-    candidate = shuffled(pool.slice(first, last))[0];
+    candidate = shuffled(pool.slice(first, last))[0]?.word;
     if (!candidate) {
       finishGame(state.assistedTurns === 0);
       return;
@@ -1342,6 +1391,14 @@ let victoryDanceTimer;
 
 function playVictoryDance() {
   clearTimeout(victoryDanceTimer);
+  const voice = document.getElementById('victory-voice');
+  state.speechSynth?.cancel();
+  voice.currentTime = 0;
+  voice.play().catch(error => {
+    if (error.name !== 'AbortError' && dom.viewResult.classList.contains('active')) {
+      speakAI('엘을 가져가!', null, { rate: 1.15, pitch: 1.35 });
+    }
+  });
   const avatar = document.querySelector('.victory-avatar');
   avatar.dataset.frame = 'ready';
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;

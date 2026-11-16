@@ -163,6 +163,9 @@ label { font-weight: 800; }
 .modal-content { display: none; width: min(440px, calc(100% - 28px)); max-height: calc(100% - 28px); padding: 22px; border: 1px solid var(--ink); border-radius: 14px; background: var(--white); color: var(--ink); }
 .modal-content[open] { display: grid; }
 .modal-content::backdrop { background: #20263b85; }
+#text-modal-time { color: var(--blue); font-weight: 800; }
+#text-modal-feedback:not(:empty) { color: var(--ink); line-height: 1.5; }
+#text-modal-feedback:empty { display: none; }
 
 .split-heading { display: flex; justify-content: space-between; align-items: end; gap: 14px; flex-wrap: wrap; }
 .table-wrap { overflow-x: auto; }

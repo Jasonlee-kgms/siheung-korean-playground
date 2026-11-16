@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>국어 놀이터 | 2026 시흥 AI+X 미래교육 페스타</title>
-  <link rel="stylesheet" href="styles.css?v=pporaengi-l">
+  <link rel="stylesheet" href="styles.css?v=quiz-keyboard-6">
 </head>
 <body>
   <div class="app-container">
@@ -45,7 +45,7 @@
         </div>
         <ol class="stage-list" aria-label="게임 순서">
           <li><span class="stage-number step-one">1</span><span><b>AI 나이 예측</b><small>사진으로 내게 맞는 난이도 추천받기</small></span></li>
-          <li><span class="stage-number step-two">2</span><span><b>글 비교 퀴즈</b><small>두 글을 읽고 근거 찾기</small></span></li>
+          <li><span class="stage-number step-two">2</span><span><b>AI가 쓴 글 찾기</b><small>두 글 중 AI가 쓴 글 고르기</small></span></li>
           <li><span class="stage-number step-three">3</span><span><b>AI 끝말잇기</b><small>마지막 글자로 시작하는 단어 말하기</small></span></li>
         </ol>
       </section>
@@ -84,8 +84,8 @@
 
       <section id="view-stage1" class="view-section" aria-labelledby="quiz-heading">
         <div class="screen-heading">
-          <h2 id="quiz-heading" tabindex="-1">글 비교 퀴즈</h2>
-          <p id="quiz-question"></p>
+          <h2 id="quiz-heading" tabindex="-1">AI가 쓴 글 찾기</h2>
+          <p>둘 중 AI가 쓴 글은 어느 쪽일까?</p>
         </div>
         <div class="quiz-header">
           <span id="quiz-idiom-tag"></span><strong id="quiz-number">1 / 2 문제</strong>
@@ -106,6 +106,8 @@
         <div id="quiz-feedback" class="quiz-feedback" role="status">
           <h3 id="feedback-title"></h3>
           <p id="feedback-desc"></p>
+          <p><a id="quiz-source" target="_blank" rel="noopener noreferrer"></a></p>
+          <p class="quiz-note">글의 느낌만으로 작성자를 확정할 수는 없어.</p>
         </div>
         <button id="btn-next-quiz" class="btn-primary-large">다음 문제 →</button>
       </section>
@@ -150,12 +152,13 @@
       <section id="view-result" class="view-section" aria-labelledby="result-heading">
         <div class="screen-heading"><h2 id="result-heading" tabindex="-1">도전 완료!</h2></div>
         <div id="ai-victory" class="ai-victory" hidden>
+          <audio id="victory-voice" src="pporaengi-l-voice.mp3" preload="auto"></audio>
           <div class="victory-avatar" role="img" aria-label="L 춤을 추는 뽀랭이">
             <img id="victory-avatar" class="victory-frame frame-ready" src="pporaengi.png" alt="">
             <div class="victory-frame victory-dance-sprite" aria-hidden="true"></div>
           </div>
           <div>
-            <p><strong>이번엔 뽀랭이 승리!</strong><span>한 번 더 도전해 볼래?</span></p>
+            <p><strong>이번엔 뽀랭이 승리!</strong><span>“L을 가져가!”</span></p>
             <button id="btn-replay-dance" class="btn-utility">L 춤 다시 보기</button>
           </div>
         </div>
@@ -212,14 +215,16 @@
 
   <dialog id="text-input-modal" class="modal-content" aria-labelledby="text-modal-heading">
     <h2 id="text-modal-heading">단어 입력</h2>
-    <label for="text-modal-input">이어지는 한글 단어를 써 줘.</label>
-    <input id="text-modal-input" autocomplete="off" autofocus>
-    <div class="actions"><button id="btn-submit-text" class="btn-primary-large">제출</button><button id="btn-close-modal" class="btn-secondary">취소</button></div>
+    <p id="text-modal-time" aria-hidden="true"></p>
+    <label id="text-modal-rule" for="text-modal-input">이어지는 한글 단어를 써 줘.</label>
+    <input id="text-modal-input" type="text" inputmode="text" autocomplete="off" spellcheck="false" autofocus aria-describedby="text-modal-feedback">
+    <p id="text-modal-feedback" role="status"></p>
+    <div class="actions"><button type="button" id="btn-submit-text" class="btn-primary-large">제출</button><button type="button" id="btn-close-modal" class="btn-secondary">취소</button></div>
   </dialog>
 
   <script src="rankings.js"></script>
   <script src="words.js?v=5-levels"></script>
-  <script src="quiz-levels.js?v=5"></script>
-  <script src="app.js?v=5-levels"></script>
+  <script src="quiz-levels.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
